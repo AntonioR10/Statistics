@@ -68,38 +68,13 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>5. Discussione</h2>
-        <div id="discussion">
-            <h3>Cosa mostrano i dati</h3>
-            <ul>
-                <li><b>Periodicità:</b> kG ha periodo n (l'ordine di G). Con k &gt; n si ottiene lo stesso punto di k
-                    mod n.</li>
-                <li><b>Simmetria:</b> (n−k)G = −kG, quindi ha la stessa x e y opposta (mod 17). La x è ripetuta a
-                    coppie.</li>
-                <li><b>Correlazione input/output:</b> con campi così piccoli le misure sono rumorose e non lineari.</li>
-                <li><b>Avalanche:</b> la distanza di Hamming media calcolata sui pochi punti disponibili non è
-                    significativa.</li>
-            </ul>
-            <h3>Quali proprietà contano per una funzione one-way (ECDLP)</h3>
-            <ul>
-                <li><b>Facile in avanti, difficile all'indietro:</b> k → kG costa O(log k) con double-and-add; risalire
-                    a k richiede circa √n operazioni.</li>
-                <li><b>Determinismo e struttura di gruppo:</b> essenziali per firme e scambio di chiavi ((ab)G = a(bG)).
-                </li>
-            </ul>
-            <h3>Proprietà tipiche delle hash crittografiche (non richieste a kG)</h3>
-            <ul>
-                <li><b>Avalanche forte</b> (~50% di bit cambiati): requisito delle hash, non di kG che mantiene una
-                    struttura algebrica.</li>
-                <li><b>Resistenza alle collisioni</b> e input di lunghezza arbitraria.</li>
-                <li><b>Uniformità apparente dei bit:</b> le coordinate di kG sono vincolate alla curva ($y^2 = x^3 +
-                    7$), quindi non uniformi.</li>
-            </ul>
-            <div class="warn">Con campo e ordine così piccoli nessun test statistico dimostra la sicurezza: lo scopo è
-                capire il meccanismo.</div>
-        </div>
-    </div>
+    <div class="card"> <h2>5. Discussion</h2> <div id="discussion"> <h3>What the Data Shows</h3> <ul> <li><b>Periodicity:</b> kG has period n (the order of G). For k > n, the result is the same as (k mod n)G.</li> <li><b>Symmetry:</b> (n − k)G = −kG, so the points have the same x-coordinate and opposite y-coordinates (mod 17). Therefore, x-coordinates occur in pairs.</li> <li><b>Input/output correlation:</b> with such a small field, the measurements are noisy and show no simple linear relationship.</li> <li><b>Avalanche effect:</b> the average Hamming distance calculated from the few available points is not statistically significant.</li> </ul>
+
+<h3>Which Properties Matter for a One-Way Function (ECDLP)?</h3> <ul> <li><b>Easy to compute forward, difficult to reverse:</b> computing kG takes O(log k) operations using double-and-add, while recovering k typically requires about √n operations with generic algorithms.</li> <li><b>Determinism and group structure:</b> these are essential for digital signatures and key exchange, since (ab)G = a(bG).</li> </ul>
+
+<h3>Typical Properties of Cryptographic Hash Functions (Not Required for kG)</h3> <ul> <li><b>Strong avalanche effect</b> (approximately 50% of output bits change): a desirable property of cryptographic hash functions, but not a requirement for kG, which preserves an algebraic structure.</li> <li><b>Collision resistance</b> and the ability to process inputs of arbitrary length.</li> <li><b>Apparently uniform bit distribution:</b> the coordinates of kG are constrained by the elliptic curve equation (y² = x³ + 7 mod 17), so they are not uniformly distributed over all possible coordinate values.</li> </ul>
+
+<div class="warn"> With such a small field and group order, no statistical test can demonstrate cryptographic security. The purpose of this exercise is to understand the underlying mechanism. </div> </div> </div>
 
     <script>
         const P = 17, B = 7;
