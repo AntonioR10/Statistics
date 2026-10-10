@@ -45,12 +45,12 @@
                     <option value="lin">Compute and print method</option>
                     <option value="dbl">Fast method for a larger k</option>
                 </select>
-                <button onclick="play()">▶ Play</button>
-                <button onclick="step()">Passo</button>
+                <button onclick="play()">▶ Auto</button>
+                <button onclick="step()">Manual</button>
                 <button onclick="resetAnim()">⟲ Reset</button>
             </div>
             <div style="margin-bottom: 10px;">
-                Velocità: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px; vertical-align: middle;">
+                Speed: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px; vertical-align: middle;">
             </div>
             <p id="frameDesc" style="font-family:monospace; min-height:1.4em; font-size: 0.9rem;"></p>
             <div style="text-align: center;">
@@ -60,7 +60,7 @@
 
         <div class="card" style="flex: 1; min-width: 320px;">
             <h2>4. Statistical Exploration</h2>
-            <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G.</p>
+            <p>We use the points kG for k = 1…n−1, where n is the order of G.</p>
             <div id="stats"></div>
         </div>
     </div>
@@ -127,16 +127,15 @@
         function getG() { return curve[+document.getElementById('gSel').value]; }
         function getK() { const v = parseInt(document.getElementById('k').value); return Number.isInteger(v) && v >= 1 ? v : null; }
 
-        // ---------- UI ----------
         const sel = document.getElementById('gSel');
         curve.forEach((pt, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `(${pt.x}, ${pt.y}) – ordine ${order(pt)}`; sel.appendChild(o); });
         sel.value = curve.findIndex(c => c.x === 1 && c.y === 5);
 
         function update() {
             const G = getG(), k = getK(), n = order(G), info = document.getElementById('info');
-            if (k === null) { info.innerHTML = "Inserisci un intero k ≥ 1."; return; }
+            if (k === null) { info.innerHTML = "Enter an integer k ≥ 1."; return; }
             const fast = mulFast(k, G);
-            info.innerHTML = `Punti sulla curva (senza ∞): <b>${curve.length}</b> (gruppo di ordine ${curve.length + 1}). Ordine di G: <b>${n}</b> (nG = ∞).<br>` +
+            info.innerHTML = `Points on the curve (without ∞): <b>${curve.length}</b> (group of order ${curve.length + 1}). Order of G: <b>${n}</b> (nG = ∞).<br>` +
                 `k = ${k}${k >= n ? ` (equivale a k mod n = \${k % n})` : ""} → <b>TOY PUBLIC KEY Q = ${fmt(fast.Q)}</b>`;
             
             const maxL = Math.min(k, 60); let R = null, h = "<tr><th>k</th><th>kG</th></tr>";
@@ -150,7 +149,6 @@
             buildFrames(); drawStats();
         }
 
-        // ---------- SVG ----------
         const SZ = 24, OFF = 40, svg = document.getElementById('plot');
         const X = x => OFF + x * SZ + SZ / 2;
         const Y = y => 480 - OFF - y * SZ - SZ / 2;
@@ -212,7 +210,6 @@
         function stop() { if (timer) { clearTimeout(timer); timer = null; } }
         function resetAnim() { stop(); fi = 0; basePlot(); document.getElementById('frameDesc').textContent = "Reset."; }
 
-        // ---------- Statistiche ----------
         const popcount = v => v.toString(2).split("").filter(c => c === "1").length;
         const pearson = (a, b) => {
             const n = a.length, ma = a.reduce((s, v) => s + v, 0) / n, mb = b.reduce((s, v) => s + v, 0) / n;
@@ -243,22 +240,22 @@
             const avg = cnt ? tot / cnt : NaN;
             const xd = new Set(xs).size;
             
-            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). x distinti: <b>${xd}</b>; y distinti: <b>${new Set(ys).size}</b>.</p>
+            let html = `<p>Points analyzed: <b>${pts.length}</b> (k = 1…${n - 1}). Distinct x values: <b>${xd}</b>; Distinct y values: <b>${new Set(ys).size}</b>.</p>
                 <div class="cols">
-                    ${histo(xs, "Frequenza di x")}
-                    ${histo(ys, "Frequenza di y")}
+                    ${histo(xs, "X Frequencies")}
+                    ${histo(ys, "Y Frequencies")}
                 </div>
-                <h3 style="margin-top:15px;">Distribuzione dei bit (5 bit)</h3>
+                <h3 style="margin-top:15px;">Bit Distribution (5 bits)</h3>
                 <table>
-                    <tr><th>bit</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+                    <tr><th>bit</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
                     <tr><td>x: n° 1</td><td>${bx[0]}</td><td>${bx[1]}</td><td>${bx[2]}</td><td>${bx[3]}</td><td>${bx[4]}</td></tr>
                     <tr><td>y: n° 1</td><td>${by[0]}</td><td>${by[1]}</td><td>${by[2]}</td><td>${by[3]}</td><td>${by[4]}</td></tr>
                 </table>
-                <h3 style="margin-top:15px;">Correlazione (Pearson)</h3>
+                <h3 style="margin-top:15px;">Correlation (Pearson)</h3>
                 <p>corr(k, x) = <b>${pearson(ks, xs).toFixed(3)}</b> &nbsp; corr(k, y) = <b>${pearson(ks, ys).toFixed(3)}</b></p>
-                <h3>Avalanche (flip di 1 bit)</h3>
-                <p>Hamming media: <b>${avg.toFixed(2)}</b></p>
-                <div class="warn">Campioni ridotti: i dati risentono della periodicità e simmetria della curva toy.</div>`;
+                <h3>Avalanche (flip of 1 bit)</h3>
+                <p>Hamming average: <b>${avg.toFixed(2)}</b></p>
+                <div class="warn">Reduced samples: the data reflects the periodicity and symmetry of the toy curve.</div>`;
             
             document.getElementById('stats').innerHTML = html;
         }
