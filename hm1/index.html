@@ -222,7 +222,7 @@
         
         function histo(vals, label) {
             const c = Array(P).fill(0); vals.forEach(v => c[v]++);
-            return `<div style="flex: 1; min-width: 140px;"><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 8}px"></span> ${n}</div>`).join("") + `</div>`;
+            return `<div style="flex: 1; min-width: 180px;"><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 12}px"></span> ${n}</div>`).join("") + `</div>`;
         }
 
         function drawStats() {
@@ -243,11 +243,8 @@
             const avg = cnt ? tot / cnt : NaN;
             const xd = new Set(xs).size;
             
-            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). x distinti: <b>${xd}</b>; y distinti: <b>${new Set(ys).size}</b>.</p>
-                <div style="display: flex; gap: 12px; flex-wrap: nowrap; overflow-x: auto;">
-                    ${histo(xs, "Freq. x")}
-                    ${histo(ys, "Freq. y")}
-                </div>
+            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). Valori x distinti: <b>${xd}</b> su ${P}; y distinti: <b>${new Set(ys).size}</b>.</p>
+                <div class="cols">${histo(xs, "Frequenza di x")}${histo(ys, "Frequenza di y")}</div>
                 <h3 style="margin-top:15px;">Distribuzione dei bit (5 bit)</h3>
                 <table><tr><th>bit</th>${[0, 1, 2, 3, 4].map(b => `<th>\${b}</th>`).join("")}</tr>
                 <tr><td>x: n° 1</td>${bx.map(v => `<td>\${v}</td>`).join("")}</tr>
