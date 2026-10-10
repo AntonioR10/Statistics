@@ -243,17 +243,23 @@
             const avg = cnt ? tot / cnt : NaN;
             const xd = new Set(xs).size;
             
-            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). Valori x distinti: <b>${xd}</b> su ${P}; y distinti: <b>${new Set(ys).size}</b>.</p>
-                <div class="cols">${histo(xs, "Frequenza di x")}${histo(ys, "Frequenza di y")}</div>
+            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). x distinti: <b>${xd}</b>; y distinti: <b>${new Set(ys).size}</b>.</p>
+                <div class="cols">
+                    ${histo(xs, "Frequenza di x")}
+                    ${histo(ys, "Frequenza di y")}
+                </div>
                 <h3 style="margin-top:15px;">Distribuzione dei bit (5 bit)</h3>
-                <table><tr><th>bit</th>${[0, 1, 2, 3, 4].map(b => `<th>\${b}</th>`).join("")}</tr>
-                <tr><td>x: n° 1</td>${bx.map(v => `<td>\${v}</td>`).join("")}</tr>
-                <tr><td>y: n° 1</td>${by.map(v => `<td>\${v}</td>`).join("")}</tr></table>
+                <table>
+                    <tr><th>bit</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+                    <tr><td>x: n° 1</td><td>${bx[0]}</td><td>${bx[1]}</td><td>${bx[2]}</td><td>${bx[3]}</td><td>${bx[4]}</td></tr>
+                    <tr><td>y: n° 1</td><td>${by[0]}</td><td>${by[1]}</td><td>${by[2]}</td><td>${by[3]}</td><td>${by[4]}</td></tr>
+                </table>
                 <h3 style="margin-top:15px;">Correlazione (Pearson)</h3>
                 <p>corr(k, x) = <b>${pearson(ks, xs).toFixed(3)}</b> &nbsp; corr(k, y) = <b>${pearson(ks, ys).toFixed(3)}</b></p>
                 <h3>Avalanche (flip di 1 bit)</h3>
                 <p>Hamming media: <b>${avg.toFixed(2)}</b></p>
                 <div class="warn">Campioni ridotti: i dati risentono della periodicità e simmetria della curva toy.</div>`;
+            
             document.getElementById('stats').innerHTML = html;
         }
 
