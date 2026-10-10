@@ -115,14 +115,35 @@
 
         function order(G) { let R = G, n = 1; while (R) { R = add(R, G); n++; } return n; }
         
-        function mulFast(k, G) { 
-            const bits = k.toString(2), steps = []; let R = null;
-            for (const [i, b] of [...bits].entries()) {
-                if (R) { const D = add(R, R); steps.push({ desc: `bit ${i} = ${b}: double`, A: R, B: R, R: D }); R = D; }
-                if (b === "1") { const S = add(R, G); steps.push({ desc: `bit ${i} = ${b}: add G`, A: R, B: G, R: S }); R = S; }
-            }
-            return { Q: R, steps, bits };
+        function mulFast(k, G) {
+    let R = null;
+    let A = G;
+    let steps = [];
+    let bits = k.toString(2);
+
+    for (const bit of bits.split("").reverse()) {
+        if (bit === "1") {
+            const next = add(R, A);
+            steps.push({
+                desc: `bit = 1: add`,
+                A: R,
+                B: A,
+                R: next
+            });
+            R = next;
         }
+
+        A = add(A, A);
+        steps.push({
+            desc: `double G`,
+            A: A,
+            B: A,
+            R: A
+        });
+    }
+
+    return { Q: R, steps, bits };
+}
 
         function getG() { return curve[+document.getElementById('gSel').value]; }
         function getK() { const v = parseInt(document.getElementById('k').value); return Number.isInteger(v) && v >= 1 ? v : null; }
