@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Toy ECC: da chiave privata a chiave pubblica</title>
+    <title>ECC Toy</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,23 +12,30 @@
 
     <div class="card">
         <h1>HMWK 1: Toy Elliptic Curve Cryptography</h1>
-        <p>Curva: <b>y² = x³ + 7 (mod 17)</b> (stessa forma di secp256k1, ma con campo minuscolo).
-            Chiave pubblica: <b>Q = k·G</b>.</p>
-        <label>Punto base G:</label> <select id="gSel" onchange="update()"></select>
-        <label>Chiave privata k:</label> <input type="number" id="k" value="6" min="1" step="1" style="width:90px"
+        <p>Curve: <b>y² = x³ + 7 (mod 17)</b>.
+            Public key: <b>Q = k·G</b>.</p>
+        <label>Base point G:</label> <select id="gSel" onchange="update()"></select>
+        <label>Private key k:</label> <input type="number" id="k" value="6" min="1" step="1" style="width:90px"
             oninput="update()">
         <div class="out" id="info"></div>
     </div>
 
     <div class="card">
-        <h2>1. Metodo lento: G, 2G, 3G, …, kG</h2>
-        <div class="scroll">
-            <table id="linT"></table>
-        </div>
-        <h2>2. Metodo veloce: double-and-add</h2>
-        <p id="binInfo"></p>
-        <div class="scroll">
-            <table id="dbT"></table>
+        <h2>Metodi di calcolo della chiave pubblica</h2>
+        <div class="cols">
+            <div>
+                <h3>1. Metodo lento: G, 2G, 3G, …, kG</h3>
+                <div class="scroll" style="display: block; margin-right: 0;">
+                    <table id="linT"></table>
+                </div>
+            </div>
+            <div>
+                <h3>2. Metodo veloce: double-and-add</h3>
+                <p id="binInfo" style="margin-top: 0; font-size: 0.9rem;"></p>
+                <div class="scroll" style="display: block; margin-right: 0;">
+                    <table id="dbT"></table>
+                </div>
+            </div>
         </div>
     </div>
 
