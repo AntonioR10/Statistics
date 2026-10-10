@@ -14,7 +14,8 @@
         <h1>HMWK 1: Toy Elliptic Curve Cryptography</h1>
         <p>Curve: <b>y² = x³ + 7 (mod 17)</b>. Public key: <b>Q = k·G</b>.</p>
         <label>Base point G:</label> <select id="gSel" onchange="update()"></select>
-        <label>Private key k:</label> <input type="number" id="k" value="5" min="1" step="1" style="width:90px" oninput="update()">
+        <label>Private key k:</label> <input type="number" id="k" value="5" min="1" step="1" style="width:90px"
+            oninput="update()">
         <div class="out" id="info"></div>
     </div>
 
@@ -50,11 +51,13 @@
                 <button onclick="resetAnim()">⟲ Reset</button>
             </div>
             <div style="margin-bottom: 10px;">
-                Speed: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px; vertical-align: middle;">
+                Speed: <input type="range" id="speed" min="200" max="2000" value="1000"
+                    style="width:120px; vertical-align: middle;">
             </div>
             <p id="frameDesc" style="font-family:monospace; min-height:1.4em; font-size: 0.9rem;"></p>
             <div style="text-align: center;">
-                <svg id="plot" width="480" height="480" viewBox="0 0 480 480" style="width: 100%; max-width: 420px; height: auto;"></svg>
+                <svg id="plot" width="480" height="480" viewBox="0 0 480 480"
+                    style="width: 100%; max-width: 420px; height: auto;"></svg>
             </div>
         </div>
 
@@ -70,23 +73,31 @@
         <div id="discussion">
             <h3>Cosa mostrano i dati</h3>
             <ul>
-                <li><b>Periodicità:</b> kG ha periodo n (l'ordine di G). Con k &gt; n si ottiene lo stesso punto di k mod n.</li>
-                <li><b>Simmetria:</b> (n−k)G = −kG, quindi ha la stessa x e y opposta (mod 17). La x è ripetuta a coppie.</li>
+                <li><b>Periodicità:</b> kG ha periodo n (l'ordine di G). Con k &gt; n si ottiene lo stesso punto di k
+                    mod n.</li>
+                <li><b>Simmetria:</b> (n−k)G = −kG, quindi ha la stessa x e y opposta (mod 17). La x è ripetuta a
+                    coppie.</li>
                 <li><b>Correlazione input/output:</b> con campi così piccoli le misure sono rumorose e non lineari.</li>
-                <li><b>Avalanche:</b> la distanza di Hamming media calcolata sui pochi punti disponibili non è significativa.</li>
+                <li><b>Avalanche:</b> la distanza di Hamming media calcolata sui pochi punti disponibili non è
+                    significativa.</li>
             </ul>
             <h3>Quali proprietà contano per una funzione one-way (ECDLP)</h3>
             <ul>
-                <li><b>Facile in avanti, difficile all'indietro:</b> k → kG costa O(log k) con double-and-add; risalire a k richiede circa √n operazioni.</li>
-                <li><b>Determinismo e struttura di gruppo:</b> essenziali per firme e scambio di chiavi ((ab)G = a(bG)).</li>
+                <li><b>Facile in avanti, difficile all'indietro:</b> k → kG costa O(log k) con double-and-add; risalire
+                    a k richiede circa √n operazioni.</li>
+                <li><b>Determinismo e struttura di gruppo:</b> essenziali per firme e scambio di chiavi ((ab)G = a(bG)).
+                </li>
             </ul>
             <h3>Proprietà tipiche delle hash crittografiche (non richieste a kG)</h3>
             <ul>
-                <li><b>Avalanche forte</b> (~50% di bit cambiati): requisito delle hash, non di kG che mantiene una struttura algebrica.</li>
+                <li><b>Avalanche forte</b> (~50% di bit cambiati): requisito delle hash, non di kG che mantiene una
+                    struttura algebrica.</li>
                 <li><b>Resistenza alle collisioni</b> e input di lunghezza arbitraria.</li>
-                <li><b>Uniformità apparente dei bit:</b> le coordinate di kG sono vincolate alla curva ($y^2 = x^3 + 7$), quindi non uniformi.</li>
+                <li><b>Uniformità apparente dei bit:</b> le coordinate di kG sono vincolate alla curva ($y^2 = x^3 +
+                    7$), quindi non uniformi.</li>
             </ul>
-            <div class="warn">Con campo e ordine così piccoli nessun test statistico dimostra la sicurezza: lo scopo è capire il meccanismo.</div>
+            <div class="warn">Con campo e ordine così piccoli nessun test statistico dimostra la sicurezza: lo scopo è
+                capire il meccanismo.</div>
         </div>
     </div>
 
@@ -96,7 +107,7 @@
         function inv(a) { a = mod(a); if (a === 0) throw new Error("inverso di 0"); for (let x = 1; x < P; x++) if (a * x % P === 1) return x; }
         const neg = Q => Q ? { x: Q.x, y: mod(-Q.y) } : null;
         const eq = (A, C) => (!A && !C) || (A && C && A.x === C.x && A.y === C.y);
-        
+
         function add(A, C) {
             if (!A) return C; if (!C) return A;
             if (A.x === C.x && mod(A.y + C.y) === 0) return null;
@@ -104,7 +115,7 @@
             const rx = mod(l * l - A.x - C.x);
             return { x: rx, y: mod(l * (A.x - rx) - A.y) };
         }
-        
+
         const fmt = Q => Q ? `(${Q.x}, ${Q.y})` : "∞ (infinity)";
         const curve = [];
         for (let x = 0; x < P; x++) {
@@ -114,36 +125,36 @@
         }
 
         function order(G) { let R = G, n = 1; while (R) { R = add(R, G); n++; } return n; }
-        
+
         function mulFast(k, G) {
-    let R = null;
-    let A = G;
-    let steps = [];
-    let bits = k.toString(2);
+            let R = null;
+            let A = G;
+            let steps = [];
+            let bits = k.toString(2);
 
-    for (const bit of bits.split("").reverse()) {
-        if (bit === "1") {
-            const next = add(R, A);
-            steps.push({
-                desc: `bit = 1: add`,
-                A: R,
-                B: A,
-                R: next
-            });
-            R = next;
+            for (const bit of bits.split("").reverse()) {
+                if (bit === "1") {
+                    const next = add(R, A);
+                    steps.push({
+                        desc: `bit = 1: add`,
+                        A: R,
+                        B: A,
+                        R: next
+                    });
+                    R = next;
+                }
+
+                A = add(A, A);
+                steps.push({
+                    desc: `double G`,
+                    A: A,
+                    B: A,
+                    R: A
+                });
+            }
+
+            return { Q: R, steps, bits };
         }
-
-        A = add(A, A);
-        steps.push({
-            desc: `double G`,
-            A: A,
-            B: A,
-            R: A
-        });
-    }
-
-    return { Q: R, steps, bits };
-}
 
         function getG() { return curve[+document.getElementById('gSel').value]; }
         function getK() { const v = parseInt(document.getElementById('k').value); return Number.isInteger(v) && v >= 1 ? v : null; }
@@ -157,13 +168,13 @@
             if (k === null) { info.innerHTML = "Enter an integer k ≥ 1."; return; }
             const fast = mulFast(k, G);
             info.innerHTML = `Points on the curve (without ∞): <b>${curve.length}</b> (group of order ${curve.length + 1}). Order of G: <b>${n}</b> (nG = ∞).<br>` +
-                `k = ${k}${k >= n ? ` (equivale a k mod n = \${k % n})` : ""} → <b>TOY PUBLIC KEY Q = ${fmt(fast.Q)}</b>`;
-            
+                `k = ${k}${k >= n ? ` (equivale a k mod n = ${k % n})` : ""} → <b>TOY PUBLIC KEY Q = ${fmt(fast.Q)}</b>`;
+
             const maxL = Math.min(k, 60); let R = null, h = "<tr><th>k</th><th>kG</th></tr>";
             for (let i = 1; i <= maxL; i++) { R = add(R, G); h += `<tr><td>${i}G</td><td>${fmt(R)}</td></tr>`; }
             if (k > maxL) h += `<tr><td colspan=2>… (troncato a ${maxL} passi)</td></tr>`;
             document.getElementById('linT').innerHTML = h;
-            
+
             document.getElementById('binInfo').innerHTML = `k = ${k} = ${fast.bits} in binary → ${fast.steps.length} operations instead of ${k - 1}.`;
             document.getElementById('dbT').innerHTML = "<tr><th>Step</th><th>Operation</th><th>Result</th></tr>" +
                 fast.steps.map((s, i) => `<tr><td>${i + 1}</td><td>${s.desc}</td><td>${fmt(s.R)}</td></tr>`).join("");
@@ -173,14 +184,14 @@
         const SZ = 24, OFF = 40, svg = document.getElementById('plot');
         const X = x => OFF + x * SZ + SZ / 2;
         const Y = y => 480 - OFF - y * SZ - SZ / 2;
-        
+
         function basePlot() {
             let s = "";
             for (let i = 0; i < P; i++) {
                 s += `<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(P - 1)}" stroke="#eee"/>` +
-                     `<line x1="${X(0)}" y1="${Y(i)}" x2="${X(P - 1)}" y2="${Y(i)}" stroke="#eee"/>`;
+                    `<line x1="${X(0)}" y1="${Y(i)}" x2="${X(P - 1)}" y2="${Y(i)}" stroke="#eee"/>`;
                 s += `<text x="${X(i)}" y="${Y(0) + 20}" font-size="10" text-anchor="middle">${i}</text>` +
-                     `<text x="${X(0) - 18}" y="${Y(i) + 4}" font-size="10" text-anchor="middle">${i}</text>`;
+                    `<text x="${X(0) - 18}" y="${Y(i) + 4}" font-size="10" text-anchor="middle">${i}</text>`;
             }
             s += `<text x="${X(8)}" y="472" font-size="12" text-anchor="middle">x</text><text x="10" y="${Y(8)}" font-size="12">y</text>`;
             curve.forEach(c => s += `<circle cx="${X(c.x)}" cy="${Y(c.y)}" r="4" fill="#bbb"/>`);
@@ -191,16 +202,16 @@
         }
 
         let frames = [], fi = 0, timer = null;
-        
+
         function buildFrames() {
             stop(); const G = getG(), k = getK(); fi = 0; basePlot();
             if (k === null) { frames = []; return; }
             if (document.getElementById('mode').value === "lin") {
                 frames = []; let R = null; const m = Math.min(k, 60);
-                for (let i = 1; i <= m; i++) { 
-                    const N = add(R, G); 
-                    frames.push({ desc: `${i}G = ${R ? `\${i - 1}G + G` : "G"} = ${fmt(N)}`, A: R, B: i > 1 ? G : null, R: N }); 
-                    R = N; 
+                for (let i = 1; i <= m; i++) {
+                    const N = add(R, G);
+                    frames.push({ desc: `${i}G = ${R ? `${i - 1}G + G` : "G"} = ${fmt(N)}`, A: R, B: i > 1 ? G : null, R: N });
+                    R = N;
                 }
             } else {
                 frames = mulFast(k, G).steps.map(s => ({ ...s, desc: s.desc + " → " + fmt(s.R) }));
@@ -237,7 +248,7 @@
             let c = 0, va = 0, vb = 0; for (let i = 0; i < n; i++) { c += (a[i] - ma) * (b[i] - mb); va += (a[i] - ma) ** 2; vb += (b[i] - mb) ** 2; }
             return va && vb ? c / Math.sqrt(va * vb) : NaN;
         };
-        
+
         function histo(vals, label) {
             const c = Array(P).fill(0); vals.forEach(v => c[v]++);
             return `<div style="flex: 1; min-width: 180px;"><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 12}px"></span> ${n}</div>`).join("") + `</div>`;
@@ -249,7 +260,7 @@
             const ks = pts.map((_, i) => i + 1), xs = pts.map(p => p.x), ys = pts.map(p => p.y);
             const bitsOf = (vals) => [0, 1, 2, 3, 4].map(b => vals.filter(v => (v >> b) & 1).length);
             const bx = bitsOf(xs), by = bitsOf(ys);
-            
+
             const kb = Math.max(1, (n - 1).toString(2).length); let tot = 0, cnt = 0;
             for (let k = 1; k < n; k++) {
                 for (let b = 0; b < kb; b++) {
@@ -260,7 +271,7 @@
             }
             const avg = cnt ? tot / cnt : NaN;
             const xd = new Set(xs).size;
-            
+
             let html = `<p>Points analyzed: <b>${pts.length}</b> (k = 1…${n - 1}). Distinct x values: <b>${xd}</b>; Distinct y values: <b>${new Set(ys).size}</b>.</p>
                 <div class="cols">
                     ${histo(xs, "X Frequencies")}
@@ -277,7 +288,7 @@
                 <h3>Avalanche (flip of 1 bit)</h3>
                 <p>Hamming average: <b>${avg.toFixed(2)}</b></p>
                 <div class="warn">Reduced samples: the data reflects the periodicity and symmetry of the toy curve.</div>`;
-            
+
             document.getElementById('stats').innerHTML = html;
         }
 
