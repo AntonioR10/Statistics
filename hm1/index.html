@@ -143,8 +143,8 @@
             if (k > maxL) h += `<tr><td colspan=2>… (troncato a ${maxL} passi)</td></tr>`;
             document.getElementById('linT').innerHTML = h;
             
-            document.getElementById('binInfo').innerHTML = `k = ${k} = ${fast.bits} in binario → ${fast.steps.length} operazioni invece di ${k - 1}.`;
-            document.getElementById('dbT').innerHTML = "<tr><th>Passo</th><th>Operazione</th><th>Risultato</th></tr>" +
+            document.getElementById('binInfo').innerHTML = `k = ${k} = ${fast.bits} in binary → ${fast.steps.length} operations instead of ${k - 1}.`;
+            document.getElementById('dbT').innerHTML = "<tr><th>Step</th><th>Operation</th><th>Result</th></tr>" +
                 fast.steps.map((s, i) => `<tr><td>${i + 1}</td><td>${s.desc}</td><td>${fmt(s.R)}</td></tr>`).join("");
             buildFrames(); drawStats();
         }
@@ -184,7 +184,7 @@
             } else {
                 frames = mulFast(k, G).steps.map(s => ({ ...s, desc: s.desc + " → " + fmt(s.R) }));
             }
-            document.getElementById('frameDesc').textContent = `Pronto: ${frames.length} passi.`;
+            document.getElementById('frameDesc').textContent = `Ready: ${frames.length} steps.`;
         }
 
         function showFrame() {
@@ -199,10 +199,10 @@
                 if (f.A) { const m = neg(f.R); s += `<line x1="${X(f.R.x)}" y1="${Y(f.R.y)}" x2="${X(m.x)}" y2="${Y(m.y)}" stroke="#e74c3c" stroke-dasharray="4"/><circle cx="${X(m.x)}" cy="${Y(m.y)}" r="4" fill="none" stroke="#e74c3c"/>`; }
                 s += `<circle cx="${X(f.R.x)}" cy="${Y(f.R.y)}" r="8" fill="#e74c3c"/>`;
             } else {
-                s += `<text x="240" y="30" text-anchor="middle" fill="#e74c3c">Risultato: punto all'infinito</text>`;
+                s += `<text x="240" y="30" text-anchor="middle" fill="#e74c3c">Result: point at infinity</text>`;
             }
             dyn.innerHTML = s;
-            document.getElementById('frameDesc').textContent = `Passo ${fi + 1}/${frames.length}: ${f.desc}`;
+            document.getElementById('frameDesc').textContent = `Step ${fi + 1}/${frames.length}: ${f.desc}`;
         }
 
         function step() { if (fi < frames.length) { showFrame(); fi++; } else stop(); }
