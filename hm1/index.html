@@ -103,9 +103,6 @@
                     curve equation (y² = x³ + 7 mod 17), so they are not uniformly distributed over all possible
                     coordinate values.</li>
             </ul>
-
-            <div class="warn"> With such a small field and group order, no statistical test can demonstrate
-                cryptographic security. The purpose of this exercise is to understand the underlying mechanism. </div>
         </div>
     </div>
 
@@ -294,8 +291,7 @@
                 <h3 style="margin-top:15px;">Correlation (Pearson)</h3>
                 <p>corr(k, x) = <b>${pearson(ks, xs).toFixed(3)}</b> &nbsp; corr(k, y) = <b>${pearson(ks, ys).toFixed(3)}</b></p>
                 <h3>Avalanche (flip of 1 bit)</h3>
-                <p>Hamming average: <b>${avg.toFixed(2)}</b></p>
-                <div class="warn">Reduced samples: the data reflects the periodicity and symmetry of the toy curve.</div>`;
+                <p>Hamming average: <b>${avg.toFixed(2)}</b></p>`;
 
             document.getElementById('stats').innerHTML = html;
         }
