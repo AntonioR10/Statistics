@@ -41,29 +41,31 @@
 
     <div class="cols">
         <div class="card" style="flex: 1; min-width: 320px;">
-            <h2>3. Visualizzazione passo-passo (SVG)</h2>
-            <p>Tutti i punti della curva sono in grigio, G in verde. Ogni passo evidenzia i due operandi (blu), la retta che li unisce e il risultato (rosso).</p>
+            <h2>3. Step by step visualization</h2>
             <div style="margin-bottom: 10px;">
                 <select id="mode" onchange="buildFrames()">
-                    <option value="lin">Metodo lento</option>
-                    <option value="dbl">Double-and-add</option>
+                    <option value="lin">Compute and print method</option>
+                    <option value="dbl">Fast method for a larger k</option>
                 </select>
                 <button onclick="play()">▶ Play</button>
                 <button onclick="step()">Passo</button>
                 <button onclick="resetAnim()">⟲ Reset</button>
             </div>
             <div style="margin-bottom: 10px;">
-                Velocità: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px; vertical-align: middle;">
+                Velocità: <input type="range" id="speed" min="200" max="2000" value="1000"
+                    style="width:120px; vertical-align: middle;">
             </div>
             <p id="frameDesc" style="font-family:monospace; min-height:1.4em; font-size: 0.9rem;"></p>
             <div style="text-align: center;">
-                <svg id="plot" width="480" height="480" viewBox="0 0 480 480" style="width: 100%; max-width: 420px; height: auto;"></svg>
+                <svg id="plot" width="480" height="480" viewBox="0 0 480 480"
+                    style="width: 100%; max-width: 420px; height: auto;"></svg>
             </div>
         </div>
 
         <div class="card" style="flex: 1; min-width: 320px;">
-            <h2>4. Esplorazione statistica</h2>
-            <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G (oltre, i punti si ripetono: sarebbe periodicità, non statistica).</p>
+            <h2>4. Statistical Exploration</h2>
+            <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G (oltre, i punti si ripetono: sarebbe
+                periodicità, non statistica).</p>
             <div id="stats"></div>
         </div>
     </div>
@@ -212,7 +214,7 @@
         };
         function histo(vals, label) {
             const c = Array(P).fill(0); vals.forEach(v => c[v]++);
-            return `<div><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 25}px"></span> ${n}</div>`).join("") + `</div>`;
+            return `<div style="flex: 1; min-width: 200px;"><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 15}px"></span> ${n}</div>`).join("") + `</div>`;
         }
         function drawStats() {
             const G = getG(), n = order(G), pts = [];
@@ -230,8 +232,8 @@
             const avg = cnt ? tot / cnt : NaN;
             const xd = new Set(xs).size;
             let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). Valori x distinti: <b>${xd}</b> su ${P}; valori y distinti: <b>${new Set(ys).size}</b>.</p>
-  <div class="cols">${histo(xs, "Frequenza di x")}${histo(ys, "Frequenza di y")}</div>
-  <h3>Distribuzione dei bit (5 bit per coordinata, su ${pts.length} punti)</h3>
+<div class="cols">${histo(xs, "Frequenza di x")}${histo(ys, "Frequenza di y")}</div>  
+<h3>Distribuzione dei bit (5 bit per coordinata, su ${pts.length} punti)</h3>
   <table><tr><th>bit</th>${[0, 1, 2, 3, 4].map(b => `<th>${b}</th>`).join("")}</tr>
   <tr><td>x: n° di 1</td>${bx.map(v => `<td>${v}</td>`).join("")}</tr>
   <tr><td>y: n° di 1</td>${by.map(v => `<td>${v}</td>`).join("")}</tr></table>
