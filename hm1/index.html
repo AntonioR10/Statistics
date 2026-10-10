@@ -1,161 +1,238 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
-    <title>Toy Elliptic Curve Cryptography (SECP256K1 Toy Model)</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f4f4f9; color: #333; }
-        h1, h2 { color: #2c3e50; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        label { font-weight: bold; }
-        input, button { padding: 8px; margin: 5px 0; font-size: 16px; }
-        button { background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #2980b9; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background: #2c3e50; color: white; }
-        .output-box { background: #e8f8f5; border-left: 4px solid #2ecc71; padding: 10px; margin-top: 10px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Toy ECC: da chiave privata a chiave pubblica</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div class="card">
         <h1>HMWK 1: Toy Elliptic Curve Cryptography</h1>
-        <p>Curva: <strong>y² = x³ + 7 (mod 17)</strong> | Base Point G: <strong>(1, 5)</strong></p>
-        
-        <div>
-            <label for="privateKey">Inserisci la Chiave Privata (k):</label>
-            <input type="number" id="privateKey" value="6" min="1" max="20">
-            <button onclick="runSimulation()">Calcola Toy Public Key</button>
-        </div>
+        <p>Curva: <b>y² = x³ + 7 (mod 17)</b> (stessa forma di secp256k1, ma con campo minuscolo).
+            Chiave pubblica: <b>Q = k·G</b>.</p>
+        <label>Punto base G:</label> <select id="gSel" onchange="update()"></select>
+        <label>Chiave privata k:</label> <input type="number" id="k" value="6" min="1" step="1" style="width:90px"
+            oninput="update()">
+        <div class="out" id="info"></div>
+    </div>
 
-        <div class="output-box" id="resultArea">
-            <h3>Risultato:</h3>
-            <p id="finalOutput">Inserisci k e premi il bottone.</p>
+    <div class="card">
+        <h2>1. Metodo lento: G, 2G, 3G, …, kG</h2>
+        <div class="scroll">
+            <table id="linT"></table>
+        </div>
+        <h2>2. Metodo veloce: double-and-add</h2>
+        <p id="binInfo"></p>
+        <div class="scroll">
+            <table id="dbT"></table>
         </div>
     </div>
 
     <div class="card">
-        <h2>Passo dopo passo (G, 2G, ..., kG)</h2>
-        <div style="max-height: 250px; overflow-y: auto;">
-            <table id="stepsTable">
-                <thead>
-                    <tr><th>k</th><th>Punto Risultante (Q)</th></tr>
-                </thead>
-                <tbody>
-                    <!-- Popolato dinamicamente -->
-                </tbody>
-            </table>
-        </div>
+        <h2>3. Visualizzazione passo-passo (SVG)</h2>
+        <p>Tutti i punti della curva sono in grigio, G in verde. Ogni passo evidenzia i due operandi (blu), la retta che
+            li unisce e il risultato (rosso).</p>
+        <select id="mode" onchange="buildFrames()">
+            <option value="lin">Metodo lento</option>
+            <option value="dbl">Double-and-add</option>
+        </select>
+        <button onclick="play()">▶ Play</button><button onclick="step()">Passo</button><button onclick="resetAnim()">⟲
+            Reset</button>
+        Velocità: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px">
+        <p id="frameDesc" style="font-family:monospace;min-height:1.4em"></p>
+        <svg id="plot" width="480" height="480" viewBox="0 0 480 480"></svg>
     </div>
 
     <div class="card">
-        <h2>Esplorazione Statistica Rapida</h2>
-        <p>Generazione di coordinate x e y variando la chiave privata k da 1 a 16:</p>
-        <button onclick="runStats()">Esegui Test Statistico</button>
-        <div id="statsOutput" style="margin-top: 10px; font-family: monospace; white-space: pre-wrap;"></div>
+        <h2>4. Esplorazione statistica</h2>
+        <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G (oltre, i punti si ripetono: sarebbe periodicità,
+            non statistica).</p>
+        <div id="stats"></div>
     </div>
 
-<script>
-    const p = 17;
+    <div class="card">
+        <h2>5. Discussione</h2>
+        <div id="discussion">
+            <h3>Cosa mostrano i dati</h3>
+            <ul>
+                <li><b>Periodicità:</b> kG ha periodo n (l'ordine di G). Con k &gt; n si ottiene lo stesso punto di k
+                    mod n. Su secp256k1 n ≈ 2²⁵⁶, qui n è minuscolo.</li>
+                <li><b>Simmetria:</b> (n−k)G = −kG, quindi ha la stessa x e y opposta (mod 17). La x è quindi "ripetuta"
+                    a coppie.</li>
+                <li><b>Correlazione input/output:</b> con campi così piccoli le misure sono rumorose. Il punto è che non
+                    c'è una relazione lineare evidente tra k e le coordinate, ma ciò non è una prova di sicurezza.</li>
+                <li><b>Avalanche:</b> la distanza di Hamming media è calcolata sopra. Con 9 punti i numeri non sono
+                    significativi e dipendono dalla rappresentazione scelta.</li>
+            </ul>
+            <h3>Quali proprietà contano per una funzione one-way (ECDLP)</h3>
+            <ul>
+                <li><b>Facile in avanti, difficile all'indietro:</b> k → kG costa O(log k) con double-and-add; da Q
+                    trovare k richiede (con gli algoritmi noti) circa √n operazioni (rho di Pollard). Qui basta provare
+                    8 valori; su secp256k1 circa 2¹²⁸.</li>
+                <li><b>Determinismo e struttura di gruppo:</b> proprietà essenziali, perché permettono firme e scambio
+                    di chiavi (es. (ab)G = a(bG)).</li>
+                <li><b>Non invertibilità pratica</b> e <b>ordine grande</b> del sottogruppo.</li>
+            </ul>
+            <h3>Proprietà tipiche delle hash crittografiche (non richieste a kG)</h3>
+            <ul>
+                <li><b>Avalanche forte</b> (cambiare 1 bit cambia ~50% dei bit dell'output): per le hash è un requisito;
+                    per kG no, perché kG e (k+1)G sono legati da una semplice addizione di G, e questa struttura
+                    algebrica è proprio ciò che serve al protocollo.</li>
+                <li><b>Resistenza alle collisioni</b> e input di lunghezza arbitraria, output a lunghezza fissa.</li>
+                <li><b>Uniformità apparente dei bit di output:</b> attesa da una hash; per kG le coordinate sono
+                    vincolate alla curva (y² = x³+7), quindi non sono bit uniformi.</li>
+            </ul>
+            <div class="warn">Con campo e ordine così piccoli nessun test statistico dimostra nulla: l'ECDLP qui si
+                rompe per tentativi. Scopo: capire il meccanismo.</div>
+        </div>
+    </div>
 
-    // Aritmetica modulare
-    function mod(n, m) {
-        return ((n % m) + m) % m;
-    }
-
-    function modInverse(a, m) {
-        a = mod(a, m);
-        for (let x = 1; x < m; x++) {
-            if ((a * x) % m === 1) return x;
+    <script>
+        const P = 17, B = 7;
+        const mod = (n, m = P) => ((n % m) + m) % m;
+        function inv(a) { a = mod(a); if (a === 0) throw new Error("inverso di 0"); for (let x = 1; x < P; x++)if (a * x % P === 1) return x; }
+        const neg = Q => Q ? { x: Q.x, y: mod(-Q.y) } : null;
+        const eq = (A, C) => (!A && !C) || (A && C && A.x === C.x && A.y === C.y);
+        function add(A, C) {
+            if (!A) return C; if (!C) return A;
+            if (A.x === C.x && mod(A.y + C.y) === 0) return null;
+            const l = eq(A, C) ? mod(3 * A.x * A.x * inv(2 * A.y)) : mod((C.y - A.y) * inv(C.x - A.x));
+            const rx = mod(l * l - A.x - C.x);
+            return { x: rx, y: mod(l * (A.x - rx) - A.y) };
         }
-        return 1;
-    }
-
-    // Somma di due punti sulla curva y^2 = x^3 + 7 (mod 17)
-    function pointAdd(P, Q) {
-        if (!P) return Q;
-        if (!Q) return P;
-        if (P.x === Q.x && P.y === mod(-Q.y, p)) return null; // Punto all'infinito
-
-        let lambda;
-        if (P.x === Q.x && P.y === Q.y) {
-            // Point doubling: lambda = (3*x^2) / (2*y) mod p
-            let num = mod(3 * P.x * P.x, p);
-            let den = mod(2 * P.y, p);
-            lambda = mod(num * modInverse(den, p), p);
-        } else {
-            // Point addition: lambda = (y2 - y1) / (x2 - x1) mod p
-            let num = mod(Q.y - P.y, p);
-            let den = mod(Q.x - P.x, p);
-            lambda = mod(num * modInverse(den, p), p);
-        }
-
-        let rx = mod(lambda * lambda - P.x - Q.x, p);
-        let ry = mod(lambda * (P.x - rx) - P.y, p);
-        return { x: rx, y: ry };
-    }
-
-    // Moltiplicazione scalare: k * G
-    function scalarMultiply(k, G) {
-        let result = null;
-        let addend = { ...G };
-        let steps = [];
-
-        for (let i = 1; i <= k; i++) {
-            result = pointAdd(result, addend);
-            steps.push({ step: i, point: result ? { ...result } : "Infinity" });
-        }
-        return steps;
-    }
-
-    function runSimulation() {
-        const k = parseInt(document.getElementById('privateKey').value);
-        const G = { x: 1, y: 5 };
-
-        const steps = scalarMultiply(k, G);
-        const finalPoint = steps[steps.length - 1].point;
-
-        // Mostra risultato finale
-        const outText = finalPoint === "Infinity" 
-            ? `Per k = ${k}, il punto risultante Q è all'infinito.` 
-            : `Per k = ${k} (Chiave Privata), la <strong>TOY PUBLIC KEY (Q)</strong> è: <strong>(${finalPoint.x}, ${finalPoint.y})</strong>`;
-        
-        document.getElementById('finalOutput').innerHTML = outText;
-
-        // Popola la tabella dei passi
-        const tbody = document.getElementById('stepsTable').querySelector('tbody');
-        tbody.innerHTML = '';
-        steps.forEach(s => {
-            const row = tbody.insertRow();
-            row.insertCell(0).innerText = s.step + "G";
-            row.insertCell(1).innerText = s.point === "Infinity" ? "Infinity" : `(${s.point.x}, ${s.point.y})`;
-        });
-    }
-
-    function runStats() {
-        const G = { x: 1, y: 5 };
-        let results = "k\t| Coordinate (x, y)\n--------------------\n";
-        let xCounts = {};
-
-        for (let k = 1; k <= 16; k++) {
-            let steps = scalarMultiply(k, G);
-            let pt = steps[steps.length - 1].point;
-            let ptStr = pt === "Infinity" ? "Infinity" : `(${pt.x}, ${pt.y})`;
-            results += `${k}\t| ${ptStr}\n`;
-            
-            if (pt !== "Infinity") {
-                xCounts[pt.x] = (xCounts[pt.x] || 0) + 1;
+        const fmt = Q => Q ? `(${Q.x}, ${Q.y})` : "∞ (infinito)";
+        const curve = [];
+        for (let x = 0; x < P; x++)for (let y = 0; y < P; y++)if (mod(y * y) === mod(x * x * x + B)) curve.push({ x, y });
+        function order(G) { let R = G, n = 1; while (R) { R = add(R, G); n++; } return n; }
+        function mulFast(k, G) { // double-and-add, restituisce passi
+            const bits = k.toString(2), steps = []; let R = null;
+            for (const [i, b] of [...bits].entries()) {
+                if (R) { const D = add(R, R); steps.push({ desc: `bit ${i} = ${b}: raddoppio`, A: R, B: R, R: D }); R = D; }
+                if (b === "1") { const S = add(R, G); steps.push({ desc: `bit ${i} = ${b}: somma G`, A: R, B: G, R: S, }); R = S; }
             }
+            return { Q: R, steps, bits };
         }
-        
-        results += "\nFrequenza dei valori di x:\n" + JSON.stringify(xCounts, null, 2);
-        document.getElementById('statsOutput').innerText = results;
-    }
+        function getG() { return curve[+document.getElementById('gSel').value]; }
+        function getK() { const v = parseInt(document.getElementById('k').value); return Number.isInteger(v) && v >= 1 ? v : null; }
 
-    // Esegui all'avvio con k=6
-    runSimulation();
-</script>
+        // ---------- UI ----------
+        const sel = document.getElementById('gSel');
+        curve.forEach((pt, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `(${pt.x}, ${pt.y}) – ordine ${order(pt)}`; sel.appendChild(o); });
+        sel.value = curve.findIndex(c => c.x === 1 && c.y === 5);
 
+        function update() {
+            const G = getG(), k = getK(), n = order(G), info = document.getElementById('info');
+            if (k === null) { info.innerHTML = "Inserisci un intero k ≥ 1."; return; }
+            const fast = mulFast(k, G);
+            info.innerHTML = `Punti sulla curva (senza ∞): <b>${curve.length}</b> (gruppo di ordine ${curve.length + 1}). Ordine di G: <b>${n}</b> (nG = ∞).<br>` +
+                `k = ${k}${k >= n ? ` (equivale a k mod n = ${k % n})` : ""} → <b>TOY PUBLIC KEY Q = ${fmt(fast.Q)}</b>`;
+            // tabella lenta
+            const maxL = Math.min(k, 60); let R = null, h = "<tr><th>k</th><th>kG</th></tr>";
+            for (let i = 1; i <= maxL; i++) { R = add(R, G); h += `<tr><td>${i}G</td><td>${fmt(R)}</td></tr>`; }
+            if (k > maxL) h += `<tr><td colspan=2>… (troncato a ${maxL} passi)</td></tr>`;
+            document.getElementById('linT').innerHTML = h;
+            // tabella veloce
+            document.getElementById('binInfo').innerHTML = `k = ${k} = ${fast.bits} in binario → ${fast.steps.length} operazioni invece di ${k - 1}.`;
+            document.getElementById('dbT').innerHTML = "<tr><th>Passo</th><th>Operazione</th><th>Risultato</th></tr>" +
+                fast.steps.map((s, i) => `<tr><td>${i + 1}</td><td>${s.desc}</td><td>${fmt(s.R)}</td></tr>`).join("");
+            buildFrames(); drawStats();
+        }
+
+        // ---------- SVG ----------
+        const SZ = 24, OFF = 40, svg = document.getElementById('plot');
+        const X = x => OFF + x * SZ + SZ / 2, Y = y => 480 - OFF - y * SZ - SZ / 2;
+        function basePlot() {
+            let s = "";
+            for (let i = 0; i < P; i++) {
+                s += `<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(P - 1)}" stroke="#eee"/><line x1="${X(0)}" y1="${Y(i)}" x2="${X(P - 1)}" y2="${Y(i)}" stroke="#eee"/>`;
+                s += `<text x="${X(i)}" y="${Y(0) + 20}" font-size="10" text-anchor="middle">${i}</text><text x="${X(0) - 18}" y="${Y(i) + 4}" font-size="10" text-anchor="middle">${i}</text>`;
+            }
+            s += `<text x="${X(8)}" y="472" font-size="12" text-anchor="middle">x</text><text x="10" y="${Y(8)}" font-size="12">y</text>`;
+            curve.forEach(c => s += `<circle cx="${X(c.x)}" cy="${Y(c.y)}" r="4" fill="#bbb"/>`);
+            const G = getG();
+            s += `<circle cx="${X(G.x)}" cy="${Y(G.y)}" r="7" fill="none" stroke="#2ecc71" stroke-width="3"/>`;
+            s += `<g id="dyn"></g>`;
+            svg.innerHTML = s;
+        }
+        let frames = [], fi = 0, timer = null;
+        function buildFrames() {
+            stop(); const G = getG(), k = getK(); fi = 0; basePlot();
+            if (k === null) { frames = []; return; }
+            if (document.getElementById('mode').value === "lin") {
+                frames = []; let R = null; const m = Math.min(k, 60);
+                for (let i = 1; i <= m; i++) { const N = add(R, G); frames.push({ desc: `${i}G = ${R ? `${i - 1}G + G` : "G"} = ${fmt(N)}`, A: R, B: i > 1 ? G : null, R: N }); R = N; }
+            } else frames = mulFast(k, G).steps.map(s => ({ ...s, desc: s.desc + " → " + fmt(s.R) }));
+            document.getElementById('frameDesc').textContent = `Pronto: ${frames.length} passi.`;
+        }
+        function showFrame() {
+            const f = frames[fi], dyn = document.getElementById('dyn'); if (!f) return;
+            let s = "";
+            // storico (punti già visitati)
+            for (let i = 0; i < fi; i++) { const r = frames[i].R; if (r) s += `<circle cx="${X(r.x)}" cy="${Y(r.y)}" r="6" fill="#f5b7b1" opacity=".7"/>`; }
+            if (f.A && f.B && !eq(f.A, f.B)) {
+                s += `<line x1="${X(f.A.x)}" y1="${Y(f.A.y)}" x2="${X(f.B.x)}" y2="${Y(f.B.y)}" stroke="#3498db" stroke-width="2"/>`;
+            }
+            [f.A, f.B].forEach(q => { if (q) s += `<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="7" fill="#3498db"/>`; });
+            if (f.R) {
+                if (f.A) { const m = neg(f.R); s += `<line x1="${X(f.R.x)}" y1="${Y(f.R.y)}" x2="${X(m.x)}" y2="${Y(m.y)}" stroke="#e74c3c" stroke-dasharray="4"/><circle cx="${X(m.x)}" cy="${Y(m.y)}" r="4" fill="none" stroke="#e74c3c"/>`; }
+                s += `<circle cx="${X(f.R.x)}" cy="${Y(f.R.y)}" r="8" fill="#e74c3c"/>`;
+            } else s += `<text x="240" y="30" text-anchor="middle" fill="#e74c3c">Risultato: punto all'infinito</text>`;
+            dyn.innerHTML = s;
+            document.getElementById('frameDesc').textContent = `Passo ${fi + 1}/${frames.length}: ${f.desc}`;
+        }
+        function step() { if (fi < frames.length) { showFrame(); fi++; } else stop(); }
+        function play() { stop(); if (fi >= frames.length) resetAnim(); (function loop() { step(); if (fi < frames.length) timer = setTimeout(loop, +document.getElementById('speed').value); else timer = null; })(); }
+        function stop() { if (timer) { clearTimeout(timer); timer = null; } }
+        function resetAnim() { stop(); fi = 0; basePlot(); document.getElementById('frameDesc').textContent = "Reset."; }
+
+        // ---------- Statistiche ----------
+        const popcount = v => v.toString(2).split("").filter(c => c === "1").length;
+        const pearson = (a, b) => {
+            const n = a.length, ma = a.reduce((s, v) => s + v, 0) / n, mb = b.reduce((s, v) => s + v, 0) / n;
+            let c = 0, va = 0, vb = 0; for (let i = 0; i < n; i++) { c += (a[i] - ma) * (b[i] - mb); va += (a[i] - ma) ** 2; vb += (b[i] - mb) ** 2; }
+            return va && vb ? c / Math.sqrt(va * vb) : NaN;
+        };
+        function histo(vals, label) {
+            const c = Array(P).fill(0); vals.forEach(v => c[v]++);
+            return `<div><b>${label}</b>` + c.map((n, v) => `<div class="bar">${String(v).padStart(2)} <span style="width:${n * 25}px"></span> ${n}</div>`).join("") + `</div>`;
+        }
+        function drawStats() {
+            const G = getG(), n = order(G), pts = [];
+            for (let k = 1; k < n; k++)pts.push(fastPoint(k, G));
+            const ks = pts.map((_, i) => i + 1), xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+            const bitsOf = (vals) => [0, 1, 2, 3, 4].map(b => vals.filter(v => (v >> b) & 1).length);
+            const bx = bitsOf(xs), by = bitsOf(ys);
+            // avalanche
+            const kb = Math.max(1, (n - 1).toString(2).length); let tot = 0, cnt = 0;
+            for (let k = 1; k < n; k++)for (let b = 0; b < kb; b++) {
+                const k2 = k ^ (1 << b); if (k2 % n === 0) continue;
+                const A = fastPoint(k, G), C = fastPoint(k2 % n, G);
+                tot += popcount(A.x ^ C.x) + popcount(A.y ^ C.y); cnt++;
+            }
+            const avg = cnt ? tot / cnt : NaN;
+            const xd = new Set(xs).size;
+            let html = `<p>Punti analizzati: <b>${pts.length}</b> (k = 1…${n - 1}). Valori x distinti: <b>${xd}</b> su ${P}; valori y distinti: <b>${new Set(ys).size}</b>.</p>
+  <div class="cols">${histo(xs, "Frequenza di x")}${histo(ys, "Frequenza di y")}</div>
+  <h3>Distribuzione dei bit (5 bit per coordinata, su ${pts.length} punti)</h3>
+  <table><tr><th>bit</th>${[0, 1, 2, 3, 4].map(b => `<th>${b}</th>`).join("")}</tr>
+  <tr><td>x: n° di 1</td>${bx.map(v => `<td>${v}</td>`).join("")}</tr>
+  <tr><td>y: n° di 1</td>${by.map(v => `<td>${v}</td>`).join("")}</tr></table>
+  <p>Con una distribuzione uniforme ci si aspetterebbe circa metà di 1 per ogni bit. Nota: x, y &lt; 17 quindi il bit 4 è vero solo per il valore 16, e i valori non sono uniformi su 5 bit.</p>
+  <h3>Correlazione input/output (Pearson)</h3>
+  <p>corr(k, x) = <b>${pearson(ks, xs).toFixed(3)}</b> &nbsp; corr(k, y) = <b>${pearson(ks, ys).toFixed(3)}</b></p>
+  <h3>Avalanche (flip di 1 bit di k)</h3>
+  <p>Distanza di Hamming media sui 10 bit di (x, y): <b>${avg.toFixed(2)}</b> (ideale tipo hash: ~5.00 su 10, cioè 50%).</p>
+  <div class="warn">Pochi campioni: le percentuali sono molto rumorose. Inoltre kG = −(n−k)G, quindi x(k) = x(n−k): le coppie sono ripetute, perciò i campioni effettivi sono ancora meno.</div>`;
+            document.getElementById('stats').innerHTML = html;
+        }
+        function fastPoint(k, G) { return mulFast(k, G).Q; }
+
+        update();
+    </script>
 </body>
+
 </html>
