@@ -21,16 +21,16 @@
     </div>
 
     <div class="card">
-        <h2>Metodi di calcolo della chiave pubblica</h2>
+        <h2>Public Key Calculation Methods</h2>
         <div class="cols">
             <div>
-                <h3>1. Metodo lento: G, 2G, 3G, …, kG</h3>
+                <h3>1. Compute and print method: G, 2G, 3G, …, kG</h3>
                 <div class="scroll" style="display: block; margin-right: 0;">
                     <table id="linT"></table>
                 </div>
             </div>
             <div>
-                <h3>2. Metodo veloce: double-and-add</h3>
+                <h3>2. Fast method for a larger k: double-and-add</h3>
                 <p id="binInfo" style="margin-top: 0; font-size: 0.9rem;"></p>
                 <div class="scroll" style="display: block; margin-right: 0;">
                     <table id="dbT"></table>
@@ -39,26 +39,33 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>3. Visualizzazione passo-passo (SVG)</h2>
-        <p>Tutti i punti della curva sono in grigio, G in verde. Ogni passo evidenzia i due operandi (blu), la retta che
-            li unisce e il risultato (rosso).</p>
-        <select id="mode" onchange="buildFrames()">
-            <option value="lin">Metodo lento</option>
-            <option value="dbl">Double-and-add</option>
-        </select>
-        <button onclick="play()">▶ Play</button><button onclick="step()">Passo</button><button onclick="resetAnim()">⟲
-            Reset</button>
-        Velocità: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px">
-        <p id="frameDesc" style="font-family:monospace;min-height:1.4em"></p>
-        <svg id="plot" width="480" height="480" viewBox="0 0 480 480"></svg>
-    </div>
+    <div class="cols">
+        <div class="card" style="flex: 1; min-width: 320px;">
+            <h2>3. Visualizzazione passo-passo (SVG)</h2>
+            <p>Tutti i punti della curva sono in grigio, G in verde. Ogni passo evidenzia i due operandi (blu), la retta che li unisce e il risultato (rosso).</p>
+            <div style="margin-bottom: 10px;">
+                <select id="mode" onchange="buildFrames()">
+                    <option value="lin">Metodo lento</option>
+                    <option value="dbl">Double-and-add</option>
+                </select>
+                <button onclick="play()">▶ Play</button>
+                <button onclick="step()">Passo</button>
+                <button onclick="resetAnim()">⟲ Reset</button>
+            </div>
+            <div style="margin-bottom: 10px;">
+                Velocità: <input type="range" id="speed" min="200" max="2000" value="1000" style="width:120px; vertical-align: middle;">
+            </div>
+            <p id="frameDesc" style="font-family:monospace; min-height:1.4em; font-size: 0.9rem;"></p>
+            <div style="text-align: center;">
+                <svg id="plot" width="480" height="480" viewBox="0 0 480 480" style="width: 100%; max-width: 420px; height: auto;"></svg>
+            </div>
+        </div>
 
-    <div class="card">
-        <h2>4. Esplorazione statistica</h2>
-        <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G (oltre, i punti si ripetono: sarebbe periodicità,
-            non statistica).</p>
-        <div id="stats"></div>
+        <div class="card" style="flex: 1; min-width: 320px;">
+            <h2>4. Esplorazione statistica</h2>
+            <p>Si usano i punti kG per k = 1…n−1, dove n è l'ordine di G (oltre, i punti si ripetono: sarebbe periodicità, non statistica).</p>
+            <div id="stats"></div>
+        </div>
     </div>
 
     <div class="card">
