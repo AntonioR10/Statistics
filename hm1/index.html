@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Toy Elliptic Curve Cryptography (SECP256K1 Toy Model)</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f4f4f9; color: #333; }
+        h1, h2 { color: #2c3e50; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { font-weight: bold; }
+        input, button { padding: 8px; margin: 5px 0; font-size: 16px; }
+        button { background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #2c3e50; color: white; }
+        .output-box { background: #e8f8f5; border-left: 4px solid #2ecc71; padding: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>HMWK 1: Toy Elliptic Curve Cryptography</h1>
+        <p>Curva: <strong>y² = x³ + 7 (mod 17)</strong> | Base Point G: <strong>(1, 5)</strong></p>
+        
+        <div>
+            <label for="privateKey">Inserisci la Chiave Privata (k):</label>
+            <input type="number" id="privateKey" value="6" min="1" max="20">
+            <button onclick="runSimulation()">Calcola Toy Public Key</button>
+        </div>
+
+        <div class="output-box" id="resultArea">
+            <h3>Risultato:</h3>
+            <p id="finalOutput">Inserisci k e premi il bottone.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Passo dopo passo (G, 2G, ..., kG)</h2>
+        <div style="max-height: 250px; overflow-y: auto;">
+            <table id="stepsTable">
+                <thead>
+                    <tr><th>k</th><th>Punto Risultante (Q)</th></tr>
+                </thead>
+                <tbody>
+                    <!-- Popolato dinamicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Esplorazione Statistica Rapida</h2>
+        <p>Generazione di coordinate x e y variando la chiave privata k da 1 a 16:</p>
+        <button onclick="runStats()">Esegui Test Statistico</button>
+        <div id="statsOutput" style="margin-top: 10px; font-family: monospace; white-space: pre-wrap;"></div>
+    </div>
+
+<script>
+    const p = 17;
+
+    // Aritmetica modulare
+    function mod(n, m) {
+        return ((n % m) + m) % m;
+    }
+
+    function modInverse(a, m) {
+        a = mod(a, m);
+        for (let x = 1; x < m; x++) {
+            if ((a * x) % m === 1) return x;
+        }
+        return 1;
+    }
+
+    // Somma di due punti sulla curva y^2 = x^3 + 7 (mod 17)
+    function pointAdd(P, Q) {
+        if (!P) return Q;
+        if (!Q) return P;
+        if (P.x === Q.x && P.y === mod(-Q.y, p)) return null; // Punto all'infinito
+
+        let lambda;
+        if (P.x === Q.x && P.y === Q.y) {
+            // Point doubling: lambda = (3*x^2) / (2*y) mod p
+            let num = mod(3 * P.x * P.x, p);
+            let den = mod(2 * P.y, p);
+            lambda = mod(num * modInverse(den, p), p);
+        } else {
+            // Point addition: lambda = (y2 - y1) / (x2 - x1) mod p
+            let num = mod(Q.y - P.y, p);
+            let den = mod(Q.x - P.x, p);
+            lambda = mod(num * modInverse(den, p), p);
+        }
+
+        let rx = mod(lambda * lambda - P.x - Q.x, p);
+        let ry = mod(lambda * (P.x - rx) - P.y, p);
+        return { x: rx, y: ry };
+    }
+
+    // Moltiplicazione scalare: k * G
+    function scalarMultiply(k, G) {
+        let result = null;
+        let addend = { ...G };
+        let steps = [];
+
+        for (let i = 1; i <= k; i++) {
+            result = pointAdd(result, addend);
+            steps.push({ step: i, point: result ? { ...result } : "Infinity" });
+        }
+        return steps;
+    }
+
+    function runSimulation() {
+        const k = parseInt(document.getElementById('privateKey').value);
+        const G = { x: 1, y: 5 };
+
+        const steps = scalarMultiply(k, G);
+        const finalPoint = steps[steps.length - 1].point;
+
+        // Mostra risultato finale
+        const outText = finalPoint === "Infinity" 
+            ? `Per k = ${k}, il punto risultante Q è all'infinito.` 
+            : `Per k = ${k} (Chiave Privata), la <strong>TOY PUBLIC KEY (Q)</strong> è: <strong>(${finalPoint.x}, ${finalPoint.y})</strong>`;
+        
+        document.getElementById('finalOutput').innerHTML = outText;
+
+        // Popola la tabella dei passi
+        const tbody = document.getElementById('stepsTable').querySelector('tbody');
+        tbody.innerHTML = '';
+        steps.forEach(s => {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = s.step + "G";
+            row.insertCell(1).innerText = s.point === "Infinity" ? "Infinity" : `(${s.point.x}, ${s.point.y})`;
+        });
+    }
+
+    function runStats() {
+        const G = { x: 1, y: 5 };
+        let results = "k\t| Coordinate (x, y)\n--------------------\n";
+        let xCounts = {};
+
+        for (let k = 1; k <= 16; k++) {
+            let steps = scalarMultiply(k, G);
+            let pt = steps[steps.length - 1].point;
+            let ptStr = pt === "Infinity" ? "Infinity" : `(${pt.x}, ${pt.y})`;
+            results += `${k}\t| ${ptStr}\n`;
+            
+            if (pt !== "Infinity") {
+                xCounts[pt.x] = (xCounts[pt.x] || 0) + 1;
+            }
+        }
+        
+        results += "\nFrequenza dei valori di x:\n" + JSON.stringify(xCounts, null, 2);
+        document.getElementById('statsOutput').innerText = results;
+    }
+
+    // Esegui all'avvio con k=6
+    runSimulation();
+</script>
+
+</body>
+</html>
