@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HMWK 2: Ethereum Wallet Pipeline</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <!-- NAVIGATION / HEADER -->
+    <div class="card" style="border-top: 5px solid var(--accent);">
+        <div>
+            <a href="../index.html" style="text-decoration: none;">
+                <button style="padding: 8px 16px; font-size: 0.9rem;">← Home</button>
+            </a>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h1>HMWK 2: From Wallet Seed to Ethereum Address</h1>
+                <p style="color: var(--text-muted); margin: 0;">Analisi della pipeline crittografica, derivazione
+                    gerarchica, primitive e proprietà statistiche.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. LA PIPELINE -->
+    <div class="card">
+        <h2>1. The Complete Ethereum Wallet Pipeline</h2>
+        <p>Il percorso completo che trasforma una sorgente di casualità grezza in un indirizzo blockchain operativo con
+            checksum:</p>
+        <pre>
+Entropia (128–256 bit, casuale)
+   ↓ BIP-39 (bit → parole + checksum)
+Mnemonic (12–24 parole)
+   ↓ PBKDF2-HMAC-SHA512 (2048 iterazioni, salt = "mnemonic" + passphrase)
+Seed (512 bit)
+   ↓ BIP-32 (HMAC-SHA512 per master key e derivazione dei figli)
+   ↓ BIP-44 (Percorso standard: m/44'/60'/0'/0/0)
+Chiave Privata (256 bit)
+   ↓ secp256k1 (Q = k·G)
+Chiave Pubblica (64 byte, formato x‖y non compresso)
+   ↓ Keccak-256 (vengono presi gli ultimi 20 byte)
+Indirizzo Ethereum (160 bit esadecimale)
+   ↓ EIP-55 (Maiuscole/minuscole regolate dall'hash dell'indirizzo)
+Indirizzo con Checksum Definitivo
+        </pre>
+    </div>
+
+    <!-- 2. RUOLO DEGLI STANDARD -->
+    <div class="card">
+        <h2>2. Role of Each Standard & Cryptographic Primitive</h2>
+        <ul>
+            <li><b>BIP-39 (2013):</b> Codifica l'entropia in parole facili da trascrivere. Converte l'entropia
+                aggiungendo un checksum calcolato tramite SHA-256, dividendo il blocco in pezzi da 11 bit associati a un
+                dizionario di 2048 parole. Il seed derivato tramite PBKDF2 utilizza la passphrase opzionale come "25ª
+                parola".</li>
+            <li><b>BIP-32 (2012) & BIP-44 (2014):</b> Gestiscono la derivazione gerarchica deterministica (HD Wallets).
+                Con un unico seed è possibile ricavare un intero albero di chiavi tramite HMAC-SHA512. BIP-44 fissa i
+                percorsi standard (per Ethereum <code>coin_type = 60</code>), garantendo l'interoperabilità tra wallet
+                diversi.</li>
+            <li><b>secp256k1:</b> La curva ellittica ($y^2 = x^3 + 7$) definita su un campo di $2^{256}$ elementi.
+                Consente il calcolo efficiente della chiave pubblica ($Q = k \cdot G$) tramite l'algoritmo
+                <i>double-and-add</i>, rendendo intrattabile il problema inverso (ECDLP).</li>
+            <li><b>Keccak-256:</b> Funzione di hash a struttura a spugna (sponge construction). Comprime i 64 byte della
+                chiave pubblica a 20 byte (160 bit) per formare l'indirizzo. <i>Nota storica:</i> differisce dallo
+                standard NIST SHA3-256 a causa di una diversa convenzione di padding e domain-separation.</li>
+            <li><b>EIP-55 (2016):</b> Meccanismo di codifica mixed-case (maiuscole/minuscole) basato sull'hash
+                dell'indirizzo. Serve a rilevare errori di battitura umani senza alterare il valore effettivo
+                dell'indirizzo o richiedere modifiche al protocollo di base.</li>
+        </ul>
+    </div>
+
+    <!-- 3. DISTINZIONI CONCETTUALI -->
+    <div class="card">
+        <h2>3. Conceptual Distinctions</h2>
+        <table>
+            <tr>
+                <th>Concetto</th>
+                <th>Dove compare</th>
+                <th>Idea Chiave</th>
+            </tr>
+            <tr>
+                <td><b>Key Generation</b></td>
+                <td>Entropia iniziale</td>
+                <td>Casualità reale tramite CSPRNG. L'unico passo non deterministico della pipeline.</td>
+            </tr>
+            <tr>
+                <td><b>Key Derivation</b></td>
+                <td>BIP-32 / BIP-44, PBKDF2</td>
+                <td>Processo deterministico al 100%: stesso input produce sempre lo stesso output. Nessuna nuova
+                    entropia introdotta.</td>
+            </tr>
+            <tr>
+                <td><b>Public-Key Crypto</b></td>
+                <td>secp256k1</td>
+                <td>Relazione asimmetrica $k \rightarrow Q$ facile in avanti ma intrattabile all'indietro. Abilita le
+                    firme digitali.</td>
+            </tr>
+            <tr>
+                <td><b>Hashing</b></td>
+                <td>Keccak-256 (e SHA-512)</td>
+                <td>Funzione unidirezionale senza chiave, deterministica, a lunghezza fissa e con forte effetto
+                    avalanche.</td>
+            </tr>
+            <tr>
+                <td><b>Checksums</b></td>
+                <td>BIP-39, EIP-55</td>
+                <td>Sistemi leggeri per il rilevamento di errori di trascrizione umani, non offrono sicurezza
+                    crittografica.</td>
+            </tr>
+            <tr>
+                <td><b>Encoding</b></td>
+                <td>Mnemonic, Hex, 0x, Case</td>
+                <td>Modifica la rappresentazione visiva dei dati (es. formato stringa o binario), senza alterarne il
+                    contenuto informativo.</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 4. STORIA E CONTESTO -->
+    <div class="card">
+        <h2>4. Historical Context & Timeline</h2>
+        <ul>
+            <li><b>1977:</b> RSA, la prima crittografia a chiave pubblica ampiamente diffusa.</li>
+            <li><b>2001:</b> Standardizzazione di SHA-2 (incluso SHA-512) da parte del NIST.</li>
+            <li><b>2012:</b> Introduzione di BIP-32 (HD Wallets) e competizione Keccak vinta per lo standard SHA-3.</li>
+            <li><b>2013:</b> Introduzione di BIP-39 (Mnemonic sentences).</li>
+            <li><b>2014:</b> Standardizzazione di BIP-44 (Multi-account paths).</li>
+            <li><b>2015:</b> Standardizzazione ufficiale di SHA-3 (FIPS 202) e lancio della rete Ethereum.</li>
+            <li><b>2016:</b> Introduzione di EIP-55 (Ethereum mixed-case checksum addresses).</li>
+        </ul>
+    </div>
+
+    <!-- 5. PROPRIETÀ STATISTICHE E TEST VECTOR -->
+    <div class="card">
+        <h2>5. Statistical Properties & Test Vector</h2>
+        <ul>
+            <li><b>Entropia e Seed:</b> Se l'entropia è uniforme, la frase mnemonica mappa uniformemente lo spazio delle
+                possibilità ($2^{128}$ o $2^{256}$). Il seed risultante dal PBKDF2 è statisticamente indistinguibile da
+                una stringa casuale.</li>
+            <li><b>Avalanche di Keccak:</b> Invertendo un singolo bit nell'input, circa il 50% dei bit dell'output
+                cambia. Sui 160 bit di un indirizzo Ethereum ci si aspetta che circa 80 bit varino improvvisamente.</li>
+            <li><b>Robustezza EIP-55:</b> Il pattern di lettere maiuscole/minuscole offre una protezione contro gli
+                errori di digitazione casuali con una probabilità di errore residua stimata intorno allo $0,003\%$
+                ($2^{-15}$).</li>
+        </ul>
+        <h3>Test Vector Notato</h3>
+        <p>La celebre frase mnemonica composta da 12 volte la parola <code>abandon</code>
+            (<code>abandon × 11 + about</code>) genera deterministicamente il seguente indirizzo Ethereum di test:</p>
+        <pre>0x9858EfFD232B4033E47d90003D41EC34EcaEda94</pre>
+    </div>
+
+</body>
+
+</html>
