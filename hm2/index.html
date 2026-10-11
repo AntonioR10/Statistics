@@ -24,20 +24,77 @@
             </div>
         </div>
     </div>
-
     <div class="card">
-        <h2 style="margin-top: 30px;">1. Historical Context & Timeline</h2>
-        <ul>
-            <li><b>1977:</b> RSA, the first widely adopted public-key cryptography.</li>
-            <li><b>2001:</b> Standardization of SHA-2 (including SHA-512) by NIST.</li>
-            <li><b>2012:</b> Introduction of BIP-32 (HD wallets) and the Keccak win in the competition for the SHA-3
-                standard.</li>
-            <li><b>2013:</b> Introduction of BIP-39 (mnemonic sentences).</li>
-            <li><b>2014:</b> Standardization of BIP-44 (multi-account paths).</li>
-            <li><b>2015:</b> Official standardization of SHA-3 (FIPS 202) and launch of the Ethereum network.</li>
-            <li><b>2016:</b> Introduction of EIP-55 (Ethereum mixed-case checksum addresses).</li>
-        </ul>
-        <h2 style="margin-top: 30px;">2. Role of Each Standard & Cryptographic Primitive</h2>
+        <h2>1. The Wallet Pipeline</h2>
+        <p>A wallet turns a human-friendly mnemonic into a checksummed Ethereum address through a chain of
+            <b>distinct</b> steps. Each step has one job and hands its output to the next:
+        </p>
+        <table>
+            <tr>
+                <th>Step</th>
+                <th>Input → Output</th>
+                <th>Tool</th>
+                <th>What happens</th>
+            </tr>
+            <tr>
+                <td><b>0</b></td>
+                <td>CSPRNG → entropy (128 or 256 bit)</td>
+                <td>Random source</td>
+                <td>The only truly random step. Everything after it is deterministic.</td>
+            </tr>
+            <tr>
+                <td><b>1</b></td>
+                <td>Entropy → mnemonic (12/24 words)</td>
+                <td>BIP-39</td>
+                <td>A SHA-256 checksum is appended (4 bits for 128-bit entropy, giving 132 bits = 12 &times; 11 bits).
+                    Each 11-bit chunk selects a word from a 2048-word list.</td>
+            </tr>
+            <tr>
+                <td><b>2</b></td>
+                <td>Mnemonic (+ optional passphrase) → 512-bit seed</td>
+                <td>BIP-39 / PBKDF2</td>
+                <td>PBKDF2-HMAC-SHA512 with 2048 iterations; the salt is the string "mnemonic" plus the passphrase.</td>
+            </tr>
+            <tr>
+                <td><b>3</b></td>
+                <td>Seed → master key and chain code</td>
+                <td>BIP-32</td>
+                <td>HMAC-SHA512 of the seed, split into a 256-bit key and a 256-bit chain code.</td>
+            </tr>
+            <tr>
+                <td><b>4</b></td>
+                <td>Master key → account/address private key</td>
+                <td>BIP-32 / BIP-44</td>
+                <td>Child derivation along the path <code>m/44'/60'/0'/0/0</code> (purpose / Ethereum / account /
+                    change / index).</td>
+            </tr>
+            <tr>
+                <td><b>5</b></td>
+                <td>Private key <i>k</i> → public key <i>Q</i></td>
+                <td>secp256k1</td>
+                <td><i>Q</i> = <i>k</i> &middot; <i>G</i> (scalar multiplication). Result: 64 bytes (x and y
+                    coordinates).</td>
+            </tr>
+            <tr>
+                <td><b>6</b></td>
+                <td>Public key → address (20 bytes)</td>
+                <td>Keccak-256</td>
+                <td>Hash the 64-byte public key and keep the <b>last 20 bytes</b> of the 32-byte digest.</td>
+            </tr>
+            <tr>
+                <td><b>7</b></td>
+                <td>Address → checksummed address</td>
+                <td>EIP-55</td>
+                <td>Hash the lowercase hex address with Keccak-256; each letter is uppercased if the corresponding
+                    hash nibble is 8 or more.</td>
+            </tr>
+        </table>
+
+        <p><b>How the steps fit together:</b> steps 1-4 are about <i>key management</i> (one memorable secret
+            recovers an entire tree of keys), step 5 is about <i>public-key cryptography</i> (a public identity
+            linked to a secret that never leaves the wallet), step 6 is about <i>hashing</i> (a short, uniform
+            identifier), and step 7 is about <i>error detection</i> (protecting humans, not the system).</p>
+        <h2>2. Role of Each Standard & Cryptographic Primitive</h2>
         <ul>
             <li><b>BIP-39 (2013):</b> Encodes entropy as words that are easy to write down. It converts the entropy by
                 appending a checksum computed with SHA-256, splitting the resulting block into 11-bit chunks mapped to a
@@ -48,10 +105,11 @@
                 single seed, an entire tree of keys can be derived using HMAC-SHA512. BIP-44 fixes the standard paths
                 (for Ethereum <code>coin_type = 60</code>), ensuring interoperability between different wallets.</li>
             <li><b>secp256k1:</b> The elliptic curve y<sup>2</sup> = x<sup>3</sup> + 7 defined over a field of
-                2<sup>256</sup> elements. It
+                about 2<sup>256</sup> elements. It
                 allows efficient computation of the public key <i>Q</i> = <i>k</i> &middot; <i>G</i> via the
                 <i>double-and-add</i>
-                algorithm, making the inverse problem (ECDLP) intractable.</li>
+                algorithm, making the inverse problem (ECDLP) intractable.
+            </li>
             <li><b>Keccak-256:</b> A sponge-construction hash function. It compresses the 64 bytes of the public key
                 into 20 bytes (160 bits) to form the address. <i>Historical note:</i> it differs from the NIST SHA3-256
                 standard because of a different padding and domain-separation convention.</li>
@@ -59,8 +117,7 @@
                 address. It serves to detect human typing errors without changing the actual value of the address or
                 requiring changes to the base protocol.</li>
         </ul>
-
-        <h2 style="margin-top: 30px;">3. Conceptual Distinctions</h2>
+        <h2>3. Conceptual Distinctions</h2>
         <div class="concept-grid">
             <div class="concept-card">
                 <div class="concept-header">
@@ -85,8 +142,8 @@
                     <span class="concept-title">Public-Key Crypto</span>
                     <span class="concept-badge">secp256k1</span>
                 </div>
-                <p class="concept-desc">Asymmetric relationship k -> Q, easy forward, intractable in reverse.
-                    Enables digital signatures.</p>
+                <p class="concept-desc">Asymmetric relationship <i>k</i> &rarr; <i>Q</i>, easy forward, intractable in
+                    reverse. Enables digital signatures.</p>
             </div>
 
             <div class="concept-card">
@@ -116,11 +173,79 @@
                     altering its informational content.</p>
             </div>
         </div>
-
-
     </div>
     <div class="card">
-        <h2>5. Statistical Properties & Test Vector</h2>
+        <h2>4. SHA-2 / SHA-512 vs Keccak / SHA-3</h2>
+        <p>Both are cryptographic hash functions and both were standardized by NIST, but they are <b>different
+                designs</b>, not successive versions of the same algorithm.</p>
+        <table>
+            <tr>
+                <th></th>
+                <th>SHA-2 / SHA-512</th>
+                <th>Keccak / SHA-3</th>
+            </tr>
+            <tr>
+                <td><b>Standardized</b></td>
+                <td>2001 (FIPS 180-2)</td>
+                <td>2015 (FIPS 202), after the NIST competition won by Keccak in 2012</td>
+            </tr>
+            <tr>
+                <td><b>Construction</b></td>
+                <td>Merkle&ndash;Damg&aring;rd with a compression function</td>
+                <td>Sponge construction (absorb / squeeze) over the Keccak-f permutation</td>
+            </tr>
+            <tr>
+                <td><b>Length extension</b></td>
+                <td>Plain SHA-512 is vulnerable, which is why HMAC is used for keyed use</td>
+                <td>Not vulnerable by design</td>
+            </tr>
+            <tr>
+                <td><b>Role in this pipeline</b></td>
+                <td>SHA-256 in the BIP-39 checksum; HMAC-SHA512 in BIP-32; PBKDF2-HMAC-SHA512 for the seed</td>
+                <td>Keccak-256 for the address and for EIP-55</td>
+            </tr>
+        </table>
+        <p><b>Keccak-256 &ne; SHA3-256.</b> Ethereum adopted Keccak before NIST finalized SHA-3. When NIST published
+            the standard it changed the padding/domain-separation byte (<code>0x06</code> for SHA3-256 instead of the
+            original <code>0x01</code>). The internal permutation is the same, but the two functions give different
+            outputs for the same input, so a library must expose the <i>original</i> Keccak-256 to compute Ethereum
+            addresses correctly.</p>
+        <h2>5. Why Several Techniques Instead of One Algorithm?</h2>
+        <p>No single algorithm can do all these jobs: each primitive solves a different problem with different
+            requirements (randomness, determinism, reversibility, speed, human usability). Combining them keeps each
+            part simple, replaceable and independently analyzable.</p>
+        <ul>
+            <li><b>BIP-39 / BIP-32 / BIP-44 &rarr; key management and derivation.</b> They let a user back up
+                <i>one</i> short secret and recover unlimited keys and accounts, in the same way across different
+                wallets. They are about convenience and interoperability, not about signatures.
+            </li>
+            <li><b>secp256k1 &rarr; public/private key relationship and digital signatures.</b> Only an asymmetric
+                scheme lets anyone verify a signature without learning the secret. A hash function alone cannot
+                provide this.</li>
+            <li><b>Keccak-256 &rarr; hashing.</b> It shortens the 64-byte public key into a compact 20-byte address
+                and adds a layer of indirection: the address does not directly reveal the public key until the
+                account signs a transaction.</li>
+            <li><b>EIP-55 &rarr; checksum / error detection.</b> It is purely a safeguard against human typos. It adds
+                no security against attackers and, being only a case pattern, needs no change to the protocol.</li>
+        </ul>
+        <p>In short: <i>derivation</i> manages secrets, <i>public-key crypto</i> proves ownership, <i>hashing</i>
+            produces compact identifiers, and <i>checksums</i> protect people from mistakes.</p>
+        <h2>6. Historical Context & Timeline</h2>
+        <ul>
+            <li><b>1977:</b> RSA, the first widely adopted public-key cryptography.</li>
+            <li><b>2001:</b> Standardization of SHA-2 (including SHA-512) by NIST.</li>
+            <li><b>2012:</b> Introduction of BIP-32 (HD wallets) and the Keccak win in the competition for the SHA-3
+                standard.</li>
+            <li><b>2013:</b> Introduction of BIP-39 (mnemonic sentences).</li>
+            <li><b>2014:</b> Standardization of BIP-44 (multi-account paths).</li>
+            <li><b>2015:</b> Official standardization of SHA-3 (FIPS 202) and launch of the Ethereum network.</li>
+            <li><b>2016:</b> Introduction of EIP-55 (Ethereum mixed-case checksum addresses).</li>
+        </ul>
+    </div>
+
+    <!-- 7. STATISTICS + TEST VECTOR -->
+    <div class="card">
+        <h2>7. Statistical Properties & Test Vector</h2>
         <ul>
             <li><b>Entropy and Seed:</b> If the entropy is uniform, the mnemonic phrase maps uniformly over the space of
                 possibilities (2<sup>128</sup> or 2<sup>256</sup>). The seed resulting from PBKDF2 is statistically
@@ -133,7 +258,7 @@
         <h3>Notable Test Vector</h3>
         <p>The well-known 12-word mnemonic phrase made of the word <code>abandon</code> repeated 11 times followed by
             <code>about</code> (<code>abandon × 11 + about</code>) deterministically generates the following Ethereum
-            test address:
+            test address (path <code>m/44'/60'/0'/0/0</code>, empty passphrase):
         </p>
         <pre>0x9858EfFD232B4033E47d90003D41EC34EcaEda94</pre>
     </div>
