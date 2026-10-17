@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HMWK 2: Toy ECC vs Caesar</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .res {
+            display: none;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .cmp {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .cmp th,
+        .cmp td {
+            border: 1px solid #8884;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <a href="../index.html" style="text-decoration:none"><button style="padding:8px 16px;font-size:0.9rem">←
+                Home</button></a>
+        <h1>HMWK 2: Toy ECC vs Caesar, Encryption and Cryptanalysis</h1>
+        <p>Curve from HMWK 1: <b>y² = x³ + 7 (mod 17)</b>. Public key <b>Q = d·G</b>. Both schemes encrypt the same
+            message.</p>
+        <div><label for="msg">Message (ASCII):</label>
+            <textarea id="msg"
+                rows="2">CRYPTOGRAPHY AND STATISTICAL ANALYSIS OF CIPHERS CAN BE ATTACKED USING FREQUENCY ANALYSIS</textarea>
+        </div>
+        <p><label>Base point G:</label> <select id="gSel" onchange="upd()"></select>
+            <label>Private key d:</label> <input type="number" id="d" value="5" min="1" style="width:80px"
+                oninput="upd()">
+            <label>Caesar key:</label> <input type="number" id="ck" value="13" min="0" max="25" style="width:70px">
+        </p>
+        <div id="info"></div>
+    </div>
+
+    <div class="card">
+        <h2>1. Toy ECC scheme (ElGamal-like)</h2>
+        <p>Receiver: private <b>d</b>, public <b>Q = d·G</b>. Sender: random <b>k</b>, sends <b>C1 = k·G</b> and the
+            message XOR a keystream derived from <b>S = k·Q</b>. Receiver recomputes <b>S = d·C1</b>.</p>
+        <button onclick="eccEnc()">1. Encrypt (sender)</button>
+        <button onclick="eccDec()">2. Decrypt (receiver)</button>
+        <div class="res" id="ecc"></div>
+    </div>
+
+    <div class="card">
+        <h2>2. Caesar cipher</h2>
+        <button onclick="cEncDec()">Encrypt and decrypt</button>
+        <div class="res" id="cae"></div>
+    </div>
+
+    <div class="card">
+        <h2>3. Statistical cryptanalysis of Caesar</h2>
+        <p>Letter frequencies and bigrams are learned from a reference corpus (editable). Experiments use a different,
+            held-out text.</p>
+        <label for="corpus">Reference corpus:</label>
+        <textarea id="corpus"
+            rows="5">The study of secret writing has a long history, and the people who invented new ciphers were always followed by others who tried to break them. A message that is hidden in plain sight may look like nonsense, but language leaves traces that cannot be removed so easily. Some letters appear much more often than others, certain pairs of letters occur together again and again, and the shape of a sentence reveals the rules that were used to build it. When an analyst collects enough text, these patterns become a powerful tool, because every simple substitution keeps the counts of the original letters and only changes their names. In the same way, a modern system must hide the structure of the message completely, otherwise a patient observer will find the key without any need to solve a hard mathematical problem.</textarea>
+        <label for="test">Held-out test text (for the length experiment):</label>
+        <textarea id="test"
+            rows="5">Mathematics offers a different kind of protection. Instead of hiding letters behind a table, a modern system relies on a problem that is easy to perform in one direction and extremely hard to undo. Multiplying a point on a curve by a number takes only a handful of steps, while finding that number from the result seems to require a search through an enormous set of possibilities. For this reason the size of the key space is important, and a small range of keys offers no real security, because a computer can simply try every candidate in a fraction of a second. Engineers therefore choose parameters carefully, and they never forget that a good algorithm with a weak key is as fragile as a strong lock with an open door.</textarea>
+        <p><button onclick="cAttack()">Attack the message above</button>
+            <button onclick="cExp()">Run length experiment</button>
+        </p>
+        <div class="res" id="catk"></div>
+        <div class="res" id="exp"></div>
+    </div>
+
+    <div class="card">
+        <h2>4. Attacks on the toy ECC scheme</h2>
+        <p>Encrypt a message in section 1 first. The attacker sees G, Q, C1 and the ciphertext, and searches d in
+            1…10000.</p>
+        <button onclick="atkBF()">Brute force on d</button>
+        <button onclick="atkBS()">Baby-step giant-step</button>
+        <button onclick="atkCT()">Ciphertext-only (no Q, no d)</button>
+        <div class="res" id="eatk"></div>
+    </div>
+
+    <div class="card">
+        <h2>5. Discussion</h2>
+        <h3>Algorithm steps and role of the keys</h3>
+        <p><b>ECC.</b> The receiver keeps <b>d</b> secret (it decrypts) and publishes <b>Q = d·G</b> (it lets anyone
+            encrypt). For each message the sender picks a fresh random <b>k</b>, computes <b>C1 = k·G</b> and the shared
+            point <b>S = k·Q = d·C1</b>, then XORs each byte with a keystream byte derived from S and the position. Only
+            someone who knows d (or k) can rebuild S.
+            <b>Caesar.</b> One secret key shared by both sides: add it to each letter to encrypt, subtract it to
+            decrypt.
+        </p>
+        <h3>Similarities and differences</h3>
+        <table class="cmp">
+            <tr>
+                <th></th>
+                <th>Caesar</th>
+                <th>Toy ECC</th>
+            </tr>
+            <tr>
+                <td>Type</td>
+                <td>Symmetric, monoalphabetic substitution</td>
+                <td>Asymmetric (public/private pair), randomised</td>
+            </tr>
+            <tr>
+                <td>Key space</td>
+                <td>26</td>
+                <td>Group order n − 1 (at most 17 here, d and d+n are equivalent). Real curves: about 2²⁵⁶</td>
+            </tr>
+            <tr>
+                <td>Statistics</td>
+                <td>Letter frequencies preserved (index of coincidence stays near 0.066)</td>
+                <td>Keystream varies per position and k varies per message, so bytes look flat</td>
+            </tr>
+            <tr>
+                <td>Attack</td>
+                <td>Statistical (language model)</td>
+                <td>Algebraic (solve d·G = Q)</td>
+            </tr>
+            <tr>
+                <td>Attack cost</td>
+                <td>26 candidates</td>
+                <td>≤ n by brute force, about √n with BSGS or Pollard rho; about 2¹²⁸ on a real curve</td>
+            </tr>
+        </table>
+        <h3>Effectiveness of the statistical attack</h3>
+        <p>With enough letters the correct shift gives the best χ², bigram or trigram score. With very few letters the
+            empirical frequencies are too noisy and the right key is not distinguishable, so success drops toward 1/26.
+            The experiment above measures this. Bigrams use more information per letter than single-letter frequencies,
+            so they usually need fewer letters. Exhaustive search needs a readability test, and counting common trigrams
+            is the weakest one on short texts.</p>
+        <h3>ECC attack and restricted key space</h3>
+        <p>The attack solves the ECDLP: try d = 1, 2, … until d·G equals Q, then recompute S = d·C1 and decrypt. Unlike
+            the Caesar attack it uses no knowledge of the language, only the group structure. It works because the
+            search space is tiny. For a properly configured curve the order is about 2²⁵⁶, brute force needs roughly
+            10⁷⁷ steps and the best generic attacks still need about 2¹²⁸. Its security depends on the key space being
+            large and the key being unpredictable, together with a sound curve and fresh random k.</p>
+        <h3>Weaknesses from the design of the toy scheme</h3>
+        <ul>
+            <li>The group is so small that S can only take n − 1 values, so the ciphertext-only attack decrypts without
+                ever finding d.</li>
+            <li>There is no authentication: flipping a ciphertext bit flips the same plaintext bit.</li>
+            <li>The keystream is a toy hash, not a secure KDF.</li>
+        </ul>
+        <p>This is why the range 1…10000 asked for in the assignment is already capped here by n: restricting d adds
+            nothing when the whole group has at most 17 elements.</p>
+    </div>
+
+    <script>
+        const P = 17, B = 7;
+        const mod = (n, m = P) => ((n % m) + m) % m;
+        const $ = id => document.getElementById(id);
+        function inv(a) { a = mod(a); for (let x = 1; x < P; x++) if (a * x % P === 1) return x; }
+        const neg = Q => Q ? { x: Q.x, y: mod(-Q.y) } : null;
+        function add(A, C) {
+            if (!A) return C; if (!C) return A;
+            if (A.x === C.x && mod(A.y + C.y) === 0) return null;
+            const l = (A.x === C.x && A.y === C.y) ? mod(3 * A.x * A.x * inv(2 * A.y)) : mod((C.y - A.y) * inv(C.x - A.x));
+            const rx = mod(l * l - A.x - C.x);
+            return { x: rx, y: mod(l * (A.x - rx) - A.y) };
+        }
+        function mul(k, G) { let R = null, A = G; while (k > 0) { if (k % 2) R = add(R, A); A = add(A, A); k = Math.floor(k / 2); } return R; }
+        function order(G) { let R = G, n = 1; while (R) { R = add(R, G); n++; } return n; }
+        const fmt = Q => Q ? `(${Q.x}, ${Q.y})` : "∞";
+        const key = Q => Q ? Q.x + "," + Q.y : "inf";
+        const curve = [];
+        for (let x = 0; x < P; x++) for (let y = 0; y < P; y++) if (mod(y * y) === mod(x * x * x + B)) curve.push({ x, y });
+        const sel = $('gSel');
+        curve.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `(${p.x}, ${p.y}) – order ${order(p)}`; sel.appendChild(o); });
+        sel.value = curve.findIndex(c => c.x === 1 && c.y === 5);
+        const G = () => curve[+sel.value];
+        function show(id, t) { const o = $(id); o.style.display = 'block'; o.textContent = t; }
+        const hex = a => a.map(b => b.toString(16).padStart(2, '0')).join(' ');
+        const ic = a => { const m = {}; a.forEach(v => m[v] = (m[v] || 0) + 1); const N = a.length; return N < 2 ? NaN : Object.values(m).reduce((s, n) => s + n * (n - 1), 0) / (N * (N - 1)); };
+
+        function getD() {
+            const n = order(G()), v = parseInt($('d').value);
+            if (!(v >= 1)) { alert("Enter an integer d ≥ 1."); return null; }
+            const d = mod(v, n);
+            if (d === 0) { alert(`d is a multiple of n = ${n}: Q would be ∞. Choose another d.`); return null; }
+            return { d, n };
+        }
+        function upd() {
+            const n = order(G()), v = parseInt($('d').value), d = mod(v || 1, n);
+            $('info').textContent = `Order of G: n = ${n}. Valid private keys: 1…${n - 1} (d and d+n give the same Q).` +
+                (d ? ` Q = d·G = ${fmt(mul(d, G()))}` : " d is a multiple of n.");
+        }
+        upd();
+
+        // Keystream byte for position i derived from the shared point S (toy hash)
+        function ks(S, i) {
+            let h = (S.x * 31 + S.y * 17 + i * 2654435761) >>> 0;
+            h ^= h >>> 16; h = Math.imul(h, 0x45d9f3b) >>> 0; h ^= h >>> 16; h = Math.imul(h, 0x45d9f3b) >>> 0; h ^= h >>> 16;
+            return h & 255;
+        }
+        let st = null;
+        function dec(d) {
+            const S = mul(d, st.C1); if (!S) return null;
+            return { S, text: st.C2.map((c, i) => String.fromCharCode(c ^ ks(S, i))).join('') };
+        }
+        function eccEnc() {
+            const r = getD(); if (!r) return;
+            const g = G(), msg = $('msg').value, Q = mul(r.d, g);
+            let k, S;
+            do { k = 1 + Math.floor(Math.random() * (r.n - 1)); S = mul(k, Q); } while (!S);
+            const C1 = mul(k, g);
+            const C2 = [...msg].map((ch, i) => (ch.charCodeAt(0) & 255) ^ ks(S, i));
+            st = { G: g, n: r.n, Q, C1, C2 };
+            show('ecc', `=== ENCRYPTION (sender) ===\nPublic key Q = d·G : ${fmt(Q)}\nEphemeral k        : ${k}\nShared point S=k·Q : ${fmt(S)}\n\nSent on the channel:\nC1 = k·G : ${fmt(C1)}\nC2       : ${hex(C2)}\n\nIndex of coincidence of the ciphertext bytes: ${ic(C2).toFixed(3)} (plaintext: ${ic([...msg].map(c => c.charCodeAt(0))).toFixed(3)})`);
+        }
+        function eccDec() {
+            if (!st) { alert("Encrypt a message first."); return; }
+            const r = getD(); if (!r) return;
+            const o = dec(r.d);
+            show('ecc', o ? `=== DECRYPTION (receiver) ===\nS = d·C1 = ${fmt(o.S)}\nPlaintext: "${o.text}"` : "S is ∞: wrong key or inconsistent group.");
+        }
+
+        // ---------- Caesar ----------
+        const sh = (s, k) => s.replace(/[A-Z]/g, c => String.fromCharCode(mod(c.charCodeAt(0) - 65 - k, 26) + 65));
+        const clean = t => t.toUpperCase().replace(/[^A-Z]/g, '');
+        const ckey = () => mod(parseInt($('ck').value) || 0, 26);
+        function cEncDec() {
+            const k = ckey(), pt = $('msg').value.toUpperCase(), ct = sh(pt, -k);
+            const codes = s => [...clean(s)].map(c => c.charCodeAt(0));
+            show('cae', `Key k = ${k}\nCiphertext: ${ct}\nDecrypted : ${sh(ct, k)}\n\nIndex of coincidence of ciphertext letters: ${ic(codes(ct)).toFixed(3)} (identical to the plaintext: ${ic(codes(pt)).toFixed(3)}, frequencies are preserved)`);
+        }
+        function model() {
+            const t = clean($('corpus').value), f = Array(26).fill(1), bg = Array.from({ length: 26 }, () => Array(26).fill(1));
+            for (let i = 0; i < t.length; i++) {
+                const a = t.charCodeAt(i) - 65; f[a]++;
+                if (i) bg[t.charCodeAt(i - 1) - 65][a]++;
+            }
+            const s = f.reduce((x, y) => x + y);
+            return { f: f.map(v => v / s), bg: bg.map(r => { const z = r.reduce((x, y) => x + y); return r.map(v => Math.log(v / z)); }) };
+        }
+        const TRI = ['THE', 'AND', 'ING', 'ION', 'ENT', 'FOR', 'TIO', 'ERE', 'HER', 'ATE'];
+        function score(d, x, m) {   // higher is better
+            if (x === 'chi') {
+                const c = Array(26).fill(0); for (const ch of d) c[ch.charCodeAt(0) - 65]++;
+                let s = 0; for (let i = 0; i < 26; i++) { const e = m.f[i] * d.length; s += (c[i] - e) ** 2 / e; } return -s;
+            }
+            if (x === 'bi') { let s = 0; for (let i = 1; i < d.length; i++) s += m.bg[d.charCodeAt(i - 1) - 65][d.charCodeAt(i) - 65]; return s; }
+            let s = 0; for (const t of TRI) { let i = -1; while ((i = d.indexOf(t, i + 1)) >= 0) s++; } return s;
+        }
+        function best(c, x, m) {
+            let bk = 0, bs = -Infinity;
+            for (let k = 0; k < 26; k++) { const s = score(sh(c, k), x, m); if (s > bs) { bs = s; bk = k; } }
+            return bk;
+        }
+        const METHODS = [['chi', 'letter frequencies (χ²)'], ['bi', 'bigram log-likelihood'], ['tri', 'exhaustive + common trigrams']];
+        function cAttack() {
+            const k = ckey(), ct = sh($('msg').value.toUpperCase(), -k), c = clean(ct);
+            if (!c) { alert("The message needs letters."); return; }
+            const m = model(); let o = `Ciphertext: ${ct}\nTrue key  : ${k}\n\n`;
+            METHODS.forEach(([x, n]) => { const g = best(c, x, m); o += `${n.padEnd(30)} → key ${String(g).padStart(2)} ${g === k ? "OK" : "wrong"}\n`; });
+            show('catk', o + `\nRecovered text (bigram): ${sh(ct, best(c, 'bi', m))}`);
+        }
+        function cExp() {
+            const m = model(), t = clean($('test').value), T = 300;
+            if (t.length < 250) { alert("The test text needs at least 250 letters."); return; }
+            let o = `Success rate, ${T} random keys and text windows per length\n\nletters | χ²    | bigram | trigrams\n`;
+            for (const L of [5, 10, 20, 50, 100, 200]) {
+                const w = [0, 0, 0];
+                for (let i = 0; i < T; i++) {
+                    const s = Math.floor(Math.random() * (t.length - L + 1)), k = Math.floor(Math.random() * 26), ct = sh(t.substr(s, L), -k);
+                    METHODS.forEach(([x], j) => { if (best(ct, x, m) === k) w[j]++; });
+                }
+                o += String(L).padStart(7) + " | " + w.map(v => (100 * v / T).toFixed(0).padStart(4) + "%").join("  | ") + "\n";
+            }
+            show('exp', o);
+        }
+
+        // ---------- Attacks on ECC ----------
+        const need = () => { if (!st) alert("Encrypt a message in section 1 first."); return !!st; };
+        function report(title, d, ops, t0, extra = "") {
+            const o = d ? dec(d) : null;
+            show('eatk', `=== ${title} ===\n` + (d ? `Recovered d : ${d} (true d mod n gives the same Q)\nOperations  : ${ops}\nTime        : ${(performance.now() - t0).toFixed(2)} ms\n${extra}\nDecrypted   : "${o ? o.text : "?"}"` : "Not found in 1…10000."));
+        }
+        function atkBF() {
+            if (!need()) return;
+            const t0 = performance.now(); let f = null, ops = 0;
+            for (let d = 1; d <= 10000; d++) { ops++; const R = mul(d, st.G); if (key(R) === key(st.Q)) { f = d; break; } }
+            report("BRUTE FORCE ON ECDLP", f, ops + " scalar multiplications", t0);
+        }
+        function atkBS() {
+            if (!need()) return;
+            const t0 = performance.now(), M = 100, tab = new Map();
+            let R = null;
+            for (let j = 0; j < M; j++) { tab.set(key(R), j); R = add(R, st.G); }    // baby steps jG
+            const step = neg(mul(M, st.G)); let Y = st.Q, f = null, i;
+            for (i = 0; i <= M; i++) {
+                if (tab.has(key(Y)) && i * M + tab.get(key(Y)) > 0) { f = i * M + tab.get(key(Y)); break; }
+                Y = add(Y, step);
+            }
+            report("BABY-STEP GIANT-STEP (range 10⁴, m = 100)", f, `${M} baby + ${i + 1} giant steps`, t0, "Cost grows as √(range), not as range.\n");
+        }
+        function atkCT() {
+            if (!need()) return;
+            const t0 = performance.now(), m = model(); let R = null, bs = -Infinity, bt = null, bS = null;
+            for (let j = 1; j < st.n; j++) {
+                R = add(R, st.G);
+                const txt = st.C2.map((c, i) => String.fromCharCode(c ^ ks(R, i))).join('');
+                if (![...txt].every(ch => ch >= ' ' && ch <= '~')) continue;
+                const s = score(clean(txt), 'bi', m);
+                if (s > bs) { bs = s; bt = txt; bS = R; }
+            }
+            show('eatk', `=== CIPHERTEXT-ONLY ATTACK ===\nTried every possible shared point S in <G>: ${st.n - 1} candidates, scored with the bigram model.\nBest S : ${fmt(bS)}\nTime   : ${(performance.now() - t0).toFixed(2)} ms\nDecrypted: "${bt}"\n\nNo ECDLP was solved: the toy group is so small that S itself can be guessed.`);
+        }
+    </script>
+</body>
+
+</html>

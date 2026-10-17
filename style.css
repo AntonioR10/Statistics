@@ -316,6 +316,17 @@ li {
     margin-bottom: 7px;
 }
 
+.output-box {
+    background-color: #edf2f7;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid var(--primary-color);
+    font-family: monospace;
+    word-break: break-all;
+    margin-top: 12px;
+    white-space: pre-wrap;
+}
+
 @media (max-width: 600px) {
     body {
         padding: 16px 12px;
