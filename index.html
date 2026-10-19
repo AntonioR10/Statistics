@@ -4,26 +4,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Statistics Homeworks</title>
+    <title>Statistics Homeworks 2026</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Semplici estensioni che usano le variabili del tuo style.css */
+        .home-container {
+            max-width: 720px;
+            margin: 60px auto;
+            padding: 0 16px;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header-section h1 {
+            margin-bottom: 8px;
+            font-size: 2rem;
+        }
+
+        .hw-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .hw-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .hw-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent, #3b82f6);
+        }
+
+        .hw-info {
+            text-align: left;
+        }
+
+        .hw-number {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent, #3b82f6);
+            margin-bottom: 4px;
+        }
+
+        .hw-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .hw-arrow {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+
+        .hw-card:hover .hw-arrow {
+            color: var(--accent, #3b82f6);
+            transform: translateX(4px);
+        }
+    </style>
 </head>
 
 <body>
-    <div class="card" style="max-width: 600px; margin: 60px auto; text-align: center;">
-        <h1>Statistics Homeworks 2026</h1>
-        <p style="color: var(--text-muted); margin-bottom: 24px;">List of all assignments</p>
+    <div class="home-container">
+        
+        <header class="header-section">
+            <h1>Statistics Homeworks 2026</h1>
+            <p style="color: var(--text-muted);">List of all assignments</p>
+        </header>
 
-        <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-            <a href="hm1/" style="text-decoration: none;">
-                <button style="padding: 12px 24px; font-size: 1rem;">Homework 1: Toy Elliptic Curve
-                    Cryptography</button>
+        <main class="hw-list">
+            
+            <a href="hm1/" class="card hw-card">
+                <div class="hw-info">
+                    <div class="hw-number">Homework 1 Es1</div>
+                    <h2 class="hw-title">Toy Elliptic Curve Cryptography</h2>
+                </div>
+                <span class="hw-arrow">→</span>
             </a>
-            <a href="hm2/" style="text-decoration: none;">
-                <button style="padding: 12px 24px; font-size: 1rem;">Homework 2: From Wallet Seed to Ethereum
-                    Address</button>
+
+            <a href="hm2/" class="card hw-card">
+                <div class="hw-info">
+                    <div class="hw-number">Homework 1 Es2</div>
+                    <h2 class="hw-title">From Wallet Seed to Ethereum Address</h2>
+                </div>
+                <span class="hw-arrow">→</span>
             </a>
-        </div>
+
+            <a href="hm2/" class="card hw-card">
+                <div class="hw-info">
+                    <div class="hw-number">Homework 2</div>
+                    <h2 class="hw-title">Toy ECC vs Caesar, Encryption and Cryptanalysis</h2>
+                </div>
+                <span class="hw-arrow">→</span>
+            </a>
+
+        </main>
+
     </div>
 </body>
 
 </html>
+
+
+
