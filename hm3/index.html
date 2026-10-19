@@ -47,7 +47,7 @@
             message.</p>
         <div><label for="msg">Message (ASCII):</label>
             <textarea id="msg"
-                rows="2">CRYPTOGRAPHY AND STATISTICAL ANALYSIS OF CIPHERS CAN BE ATTACKED USING FREQUENCY ANALYSIS</textarea>
+                rows="2">Text to cypher</textarea>
         </div>
         <p><label>Base point G:</label> <select id="gSel" onchange="upd()"></select>
             <label>Private key d:</label> <input type="number" id="d" value="5" min="1" style="width:80px"
@@ -206,7 +206,6 @@
         }
         upd();
 
-        // Keystream byte for position i derived from the shared point S (toy hash)
         function ks(S, i) {
             let h = (S.x * 31 + S.y * 17 + i * 2654435761) >>> 0;
             h ^= h >>> 16; h = Math.imul(h, 0x45d9f3b) >>> 0; h ^= h >>> 16; h = Math.imul(h, 0x45d9f3b) >>> 0; h ^= h >>> 16;
@@ -234,7 +233,6 @@
             show('ecc', o ? `=== DECRYPTION (receiver) ===\nS = d·C1 = ${fmt(o.S)}\nPlaintext: "${o.text}"` : "S is ∞: wrong key or inconsistent group.");
         }
 
-        // ---------- Caesar ----------
         const sh = (s, k) => s.replace(/[A-Z]/g, c => String.fromCharCode(mod(c.charCodeAt(0) - 65 - k, 26) + 65));
         const clean = t => t.toUpperCase().replace(/[^A-Z]/g, '');
         const ckey = () => mod(parseInt($('ck').value) || 0, 26);
@@ -253,7 +251,7 @@
             return { f: f.map(v => v / s), bg: bg.map(r => { const z = r.reduce((x, y) => x + y); return r.map(v => Math.log(v / z)); }) };
         }
         const TRI = ['THE', 'AND', 'ING', 'ION', 'ENT', 'FOR', 'TIO', 'ERE', 'HER', 'ATE'];
-        function score(d, x, m) {   // higher is better
+        function score(d, x, m) {   
             if (x === 'chi') {
                 const c = Array(26).fill(0); for (const ch of d) c[ch.charCodeAt(0) - 65]++;
                 let s = 0; for (let i = 0; i < 26; i++) { const e = m.f[i] * d.length; s += (c[i] - e) ** 2 / e; } return -s;
@@ -289,7 +287,6 @@
             show('exp', o);
         }
 
-        // ---------- Attacks on ECC ----------
         const need = () => { if (!st) alert("Encrypt a message in section 1 first."); return !!st; };
         function report(title, d, ops, t0, extra = "") {
             const o = d ? dec(d) : null;
@@ -305,7 +302,7 @@
             if (!need()) return;
             const t0 = performance.now(), M = 100, tab = new Map();
             let R = null;
-            for (let j = 0; j < M; j++) { tab.set(key(R), j); R = add(R, st.G); }    // baby steps jG
+            for (let j = 0; j < M; j++) { tab.set(key(R), j); R = add(R, st.G); }    
             const step = neg(mul(M, st.G)); let Y = st.Q, f = null, i;
             for (i = 0; i <= M; i++) {
                 if (tab.has(key(Y)) && i * M + tab.get(key(Y)) > 0) { f = i * M + tab.get(key(Y)); break; }
