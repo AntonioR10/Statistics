@@ -1,890 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homework 2: Penetration Process & Limit Theorems (LLN & CLT)</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- KaTeX for LaTeX mathematical expressions -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-        onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HMWK: Penetration process, LLN and CLT</title>
+    <link rel="stylesheet" href="../style.css">
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        canvas {
+            width: 100%;
+            max-width: 480px;
+            height: auto;
+            background: #0b1329;
+            border: 1px solid var(--border);
+            border-radius: 14px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.05);
+
+        .cmp {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.85rem;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(150,150,150,0.3);
-            border-radius: 3px;
+
+        .cmp th,
+        .cmp td {
+            padding: 6px 8px;
+            text-align: right;
         }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
+
+        .cmp th:first-child,
+        .cmp td:first-child {
+            text-align: left;
         }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
+
+        .ctl label {
+            margin-right: 4px;
+        }
+
+        .ctl input,
+        .ctl select {
+            margin-right: 14px;
+        }
+
+        .note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200 min-h-screen font-sans">
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3 transition-colors">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                    S
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold leading-none tracking-tight">Statistics & Cybersecurity Lab</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Homework 2: Penetration Process & Limit Theorems</p>
-                </div>
+<body>
+
+    <div class="card">
+        <a href="../index.html" style="text-decoration:none"><button style="padding:8px 16px;font-size:0.9rem">←
+                Home</button></a>
+        <h1>HMWK: Penetration process with n systems and m attackers</h1>
+        <p>Each attacker is one trajectory. Step i is the attempt on system i, with score X<sub>i</sub> (i.i.d.). For
+            each attacker we track the total score S<sub>n</sub>, the average S<sub>n</sub>/n and the normalized score
+            S<sub>n</sub>/√n.</p>
+        <div class="ctl">
+            <label for="model">Model:</label>
+            <select id="model" onchange="$('p').disabled=this.value!=='ber'">
+                <option value="ber">Bernoulli {0,1}</option>
+                <option value="rad">Rademacher {−1,+1}</option>
+            </select>
+            <label for="p">p:</label><input type="number" id="p" value="0.3" min="0.01" max="0.99" step="0.01"
+                style="width:70px">
+            <label for="ns">System sizes n (up to 6, comma separated):</label><input id="ns" value="10,100,1000,10000"
+                style="width:170px">
+            <label for="m">Attackers m:</label><input type="number" id="m" value="2000" min="10" style="width:80px">
+            <label for="eps">ε:</label><input type="number" id="eps" value="0.05" min="0.001" step="0.01"
+                style="width:70px">
+            <button onclick="run()">Simulate</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>1. Sample trajectories</h2>
+        <p class="note">Twelve attackers, S<sub>k</sub> against the number of systems attempted k. The shaded band is kμ
+            ± 2σ√k.</p>
+        <canvas id="cPaths" width="900" height="360" style="max-width:900px"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>2. Distributions at increasing n</h2>
+        <p class="note">Bars show the fraction of attackers per bin, with the same bins for every n. Each colour is one
+            n.</p>
+        <div class="cols">
+            <div style="flex:1;min-width:300px"><canvas id="cS" width="480" height="270"></canvas></div>
+            <div style="flex:1;min-width:300px"><canvas id="cA" width="480" height="270"></canvas></div>
+        </div>
+        <div class="cols">
+            <div style="flex:1;min-width:300px"><canvas id="cN" width="480" height="270"></canvas></div>
+            <div style="flex:1;min-width:300px"><canvas id="cZ" width="480" height="270"></canvas></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>3. Numbers</h2>
+        <div style="overflow-x:auto">
+            <table class="cmp" id="tab"></table>
+        </div>
+        <p class="note" id="tabNote"></p>
+    </div>
+
+    <div class="card">
+        <h2>4. Discussion</h2>
+        <div class="concept-grid">
+            <div class="concept-card">
+                <div class="concept-header"><span class="concept-title">Law of Large Numbers</span><span
+                        class="concept-badge">Sₙ/n → μ</span></div>
+                <p class="concept-desc">Var(Sₙ/n) = σ²/n tends to 0, so the average concentrates around μ.</p>
             </div>
-
-            <div class="flex items-center space-x-3">
-                <!-- Theme Toggle Button -->
-                <button id="themeToggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
-                    <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                </button>
+            <div class="concept-card">
+                <div class="concept-header"><span class="concept-title">Variance scaling</span><span
+                        class="concept-badge">nσ² · σ²/n · σ²</span></div>
+                <p class="concept-desc">For Sₙ, Sₙ/n and Sₙ/√n respectively: only the √n scaling keeps it constant.</p>
+            </div>
+            <div class="concept-card">
+                <div class="concept-header"><span class="concept-title">Central Limit Theorem</span><span
+                        class="concept-badge">Zₙ ⇒ N(0,1)</span></div>
+                <p class="concept-desc">The standardized score approaches a normal law, as the KS distance shows.</p>
             </div>
         </div>
-    </header>
+        <h3>Law of Large Numbers</h3>
+        <p>E[S<sub>n</sub>/n] = μ and Var(S<sub>n</sub>/n) = σ²/n → 0. By Chebyshev, P(|S<sub>n</sub>/n − μ| &gt; ε) ≤
+            σ²/(nε²) → 0, so S<sub>n</sub>/n converges in probability to μ (p for Bernoulli, 0 for Rademacher). The
+            table compares the simulated tail probability with this bound, which is valid but loose.</p>
+        <h3>Variance under the three normalizations</h3>
+        <p>Var(S<sub>n</sub>) = nσ² grows, Var(S<sub>n</sub>/n) = σ²/n shrinks, and only Var(S<sub>n</sub>/√n) = σ²
+            stays constant. This is why √n is the right scale for the fluctuations of S<sub>n</sub> around its mean:
+            dividing by n over-shrinks them, and not dividing at all lets them blow up.</p>
+        <h3>Central Limit Theorem</h3>
+        <p>For the Rademacher model μ = 0 and σ = 1, so S<sub>n</sub>/√n converges in distribution to N(0, 1). The last
+            plot uses the standardized score Z<sub>n</sub> = (S<sub>n</sub> − nμ)/(σ√n), which equals S<sub>n</sub>/√n
+            in the Rademacher case and also converges to N(0, 1) for Bernoulli. The Kolmogorov–Smirnov distance in the
+            table decreases with n until it reaches the sampling noise set by m. For Bernoulli, S<sub>n</sub>/√n alone
+            has mean p√n and drifts away: the CLT applies only after centring.</p>
+        <h3>Reading the model as n systems and m attackers</h3>
+        <ul>
+            <li><b>Bernoulli:</b> S<sub>n</sub> is the number of systems an attacker breaks. Its mean np grows linearly,
+                but the fraction S<sub>n</sub>/n becomes predictable as n grows. Large installations have a stable
+                compromise rate, while the absolute count fluctuates by about √(np(1−p)).</li>
+            <li><b>Rademacher:</b> each step is a gain or a setback, with no drift. An attacker wanders around 0 with
+                typical excursions of order √n, which is negligible compared with n.</li>
+            <li><b>System size n:</b> increases the absolute spread of S<sub>n</sub> (like √n) but decreases the
+                relative spread (like 1/√n).</li>
+            <li><b>Number of attackers m:</b> does not change the distribution of one attacker's score. It improves our
+                estimate of that distribution: histograms get smoother and the KS noise floor falls roughly like 1/√m.
+                The total over all attackers has mean mnp and variance mnσ².</li>
+        </ul>
+        <div class="warn">Limits of the model: real systems are correlated, attackers adapt, and p differs between
+            systems. Independence and identical distribution are what make these theorems apply.</div>
+    </div>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8">
-
-        <!-- Banner / Introductory Section -->
-        <section class="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-200/80 dark:border-slate-700/60">
-            <div class="max-w-4xl space-y-3">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300">
-                    Stochastic Modeling & Simulation
-                </span>
-                <h2 class="text-2xl lg:text-3xl font-extrabold tracking-tight">Modeling Cyber Penetration Trajectories & Asymptotic Limit Theorems</h2>
-                <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-sm lg:text-base">
-                    This interactive dashboard simulates $m$ attackers probing $n$ system security defenses. Each step represents an attack attempt governed by independent, identically distributed (i.i.d.) random variables $X_i$. We analyze how scaling the number of systems ($n$) and attackers ($m$) affects aggregate penetration scores under the <strong>Law of Large Numbers (LLN)</strong> and the <strong>Central Limit Theorem (CLT)</strong>.
-                </p>
-            </div>
-        </section>
-
-        <!-- Simulation Controls & Settings Grid -->
-        <section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            
-            <!-- Controls Panel -->
-            <div class="lg:col-span-1 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/60 space-y-5">
-                <h3 class="text-lg font-bold border-b border-slate-200 dark:border-slate-700 pb-2 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                    Simulation Controls
-                </h3>
-
-                <!-- Model Selector -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Model Type</label>
-                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
-                        <button id="modelBernoulli" class="py-2 text-xs font-medium rounded-lg transition-all bg-white dark:bg-slate-800 shadow-xs text-brand-600 dark:text-brand-400">
-                            Bernoulli ($0,1$)
-                        </button>
-                        <button id="modelRademacher" class="py-2 text-xs font-medium rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                            Rademacher ($\pm 1$)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Number of Systems/Steps (n) -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Systems / Steps ($n$)</label>
-                        <span id="nVal" class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">100</span>
-                    </div>
-                    <input id="nSlider" type="range" min="10" max="1000" step="10" value="100" class="w-full accent-brand-600 cursor-pointer">
-                    <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-0.5">
-                        <span>10</span>
-                        <span>500</span>
-                        <span>1000</span>
-                    </div>
-                </div>
-
-                <!-- Number of Attackers (m) -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Attackers / Trajectories ($m$)</label>
-                        <span id="mVal" class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">500</span>
-                    </div>
-                    <input id="mSlider" type="range" min="50" max="2500" step="50" value="500" class="w-full accent-brand-600 cursor-pointer">
-                    <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-0.5">
-                        <span>50</span>
-                        <span>1250</span>
-                        <span>2500</span>
-                    </div>
-                </div>
-
-                <!-- Bernoulli Probability (p) -->
-                <div id="pControl">
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Success Prob. ($p$)</label>
-                        <span id="pVal" class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">0.50</span>
-                    </div>
-                    <input id="pSlider" type="range" min="0.05" max="0.95" step="0.05" value="0.50" class="w-full accent-brand-600 cursor-pointer">
-                </div>
-
-                <!-- Trajectory Display Scaling -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Trajectory Metric</label>
-                    <select id="metricSelect" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        <option value="total">Total Score: Sₖ</option>
-                        <option value="average">Average Score: Sₖ / k (LLN)</option>
-                        <option value="normalized" selected>Normalized Score: Sₖ / √k (CLT)</option>
-                        <option value="standardized">Standard Score: Zₖ = (Sₖ - kμ)/(σ√k)</option>
-                    </select>
-                </div>
-
-                <button id="runBtn" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98]">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Re-run Simulation
-                </button>
-            </div>
-
-            <!-- Summary KPI Statistics Dashboard -->
-            <div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
-                <!-- Theoretical Mean -->
-                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Step Mean $E[X_i]$</span>
-                        <div id="kpiExpMean" class="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">0.500</div>
-                    </div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                        Empirical Step Mean: <span id="kpiEmpStepMean" class="font-mono font-bold text-slate-700 dark:text-slate-300">0.501</span>
-                    </div>
-                </div>
-
-                <!-- Theoretical Step Variance -->
-                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Step Variance $Var(X_i)$</span>
-                        <div id="kpiExpVar" class="text-2xl font-black font-mono text-slate-900 dark:text-white mt-1">0.250</div>
-                    </div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                        Empirical Step Var: <span id="kpiEmpStepVar" class="font-mono font-bold text-slate-700 dark:text-slate-300">0.249</span>
-                    </div>
-                </div>
-
-                <!-- Terminal Average Score Stats -->
-                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Var of Average ($S_n/n$)</span>
-                        <div id="kpiVarAvg" class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">0.0025</div>
-                    </div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                        Formula: $\sigma^2 / n \rightarrow 0$ (LLN Convergence)
-                    </div>
-                </div>
-
-                <!-- Normality Fit (KS Test Error) -->
-                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">KS Fit Error vs Normal</span>
-                        <div id="kpiKSError" class="text-2xl font-black font-mono text-brand-600 dark:text-brand-400 mt-1">0.012</div>
-                    </div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                        Max cumulative distance $D_n$ (CLT test)
-                    </div>
-                </div>
-
-                <!-- Trajectory Chart Box -->
-                <div class="sm:col-span-2 lg:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-                            Sample Trajectories Probing Systems ($1 \dots n$)
-                        </h4>
-                        <span class="text-xs text-slate-400 font-mono">Displaying up to 50 paths</span>
-                    </div>
-                    <div class="h-72 w-full relative">
-                        <canvas id="trajectoryCanvas"></canvas>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Distribution at Step n & Variance Evolution Grid -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <!-- Terminal Distribution Histogram -->
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div>
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-base font-bold text-slate-800 dark:text-slate-100">
-                            Empirical Distribution at Step $n$ vs. Gaussian PDF
-                        </h4>
-                        <span class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 font-mono text-slate-600 dark:text-slate-300">CLT Verification</span>
-                    </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                        Comparison of the simulated scores across $m$ attackers at step $n$ with the theoretical Gaussian curve $\mathcal{N}(\mu_{scaled}, \sigma^2_{scaled})$.
-                    </p>
-                    <div class="h-72 w-full relative">
-                        <canvas id="histogramCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Variance Scaling Behavior -->
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div>
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="text-base font-bold text-slate-800 dark:text-slate-100">
-                            Variance Evolution Across Steps ($k = 1 \dots n$)
-                        </h4>
-                        <span class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 font-mono text-slate-600 dark:text-slate-300">Scaling Behaviors</span>
-                    </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                        Demonstrating linear variance growth $Var(S_k) = k\sigma^2$, vanishing average variance $Var(S_k/k) = \sigma^2/k$, and stabilized variance $Var(S_k/\sqrt{k}) = \sigma^2$.
-                    </p>
-                    <div class="h-72 w-full relative">
-                        <canvas id="varianceCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- Mathematical & Theoretical Write-up -->
-        <section class="bg-white dark:bg-slate-800 rounded-2xl p-6 lg:p-8 border border-slate-200/80 dark:border-slate-700/60 shadow-sm space-y-6">
-            <h3 class="text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-3 flex items-center gap-2">
-                <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                Theoretical Framework & Formal Derivations
-            </h3>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-sm leading-relaxed">
-                
-                <!-- Model Definition -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-brand-600 dark:text-brand-400 uppercase text-xs tracking-wider">1. Stochastic Penetration Increments</h4>
-                    <p>
-                        Let $X_1, X_2, \dots, X_n$ be independent and identically distributed (i.i.d.) random variables representing the penetration score assigned to security defenses at step $i$:
-                    </p>
-                    <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-xs space-y-2">
-                        <p><strong>Bernoulli Model:</strong> $X_i \in \{0, 1\}$, with $P(X_i = 1) = p$.</p>
-                        <p class="text-slate-500 dark:text-slate-400">Mean: $E[X_i] = p$, Variance: $Var(X_i) = p(1-p)$.</p>
-                        <hr class="border-slate-200 dark:border-slate-800">
-                        <p><strong>Rademacher Model:</strong> $X_i \in \{-1, +1\}$, with $P(X_i = +1) = 1/2$.</p>
-                        <p class="text-slate-500 dark:text-slate-400">Mean: $E[X_i] = 0$, Variance: $Var(X_i) = 1$.</p>
-                    </div>
-                </div>
-
-                <!-- LLN Explanation -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-brand-600 dark:text-brand-400 uppercase text-xs tracking-wider">2. Law of Large Numbers (LLN)</h4>
-                    <p>
-                        The sample mean (average penetration score per system) is defined as $\bar{X}_n = \frac{S_n}{n} = \frac{1}{n} \sum_{i=1}^n X_i$.
-                    </p>
-                    <p>
-                        By linearity of expectation and independence:
-                    </p>
-                    <p class="text-center font-mono text-xs bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
-                        $$E\left[\frac{S_n}{n}\right] = \mu, \quad Var\left(\frac{S_n}{n}\right) = \frac{\sigma^2}{n}$$
-                    </p>
-                    <p>
-                        By Chebyshev's Inequality, for any $\varepsilon > 0$, $P\left(\left|\frac{S_n}{n} - \mu\right| \ge \varepsilon\right) \le \frac{\sigma^2}{n \varepsilon^2} \rightarrow 0$ as $n \rightarrow \infty$. Thus, $\frac{S_n}{n} \xrightarrow{P} \mu$.
-                    </p>
-                </div>
-
-                <!-- CLT Explanation -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-brand-600 dark:text-brand-400 uppercase text-xs tracking-wider">3. Central Limit Theorem (CLT) & Scaling</h4>
-                    <p>
-                        While $\frac{S_n}{n}$ collapses to a single deterministic point $\mu$, scaling by $\sqrt{n}$ preserves the stochastic fluctuation width:
-                    </p>
-                    <p class="text-center font-mono text-xs bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
-                        $$Z_n = \frac{S_n - n\mu}{\sigma \sqrt{n}} \xrightarrow{d} \mathcal{N}(0, 1) \quad \text{as } n \rightarrow \infty$$
-                    </p>
-                    <p>
-                        For the Rademacher model ($\mu = 0, \sigma = 1$), the normalized score $\frac{S_n}{\sqrt{n}}$ converges directly to standard normal $\mathcal{N}(0,1)$.
-                    </p>
-                </div>
-
-                <!-- Cybersecurity Interpretation -->
-                <div class="space-y-3">
-                    <h4 class="font-bold text-brand-600 dark:text-brand-400 uppercase text-xs tracking-wider">4. Cybersecurity & Risk Interpretation</h4>
-                    <ul class="list-disc list-inside space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                        <li><strong>System Scale ($n$):</strong> As infrastructure scales to $n$ systems, total penetration scores $S_n$ grow linearly $O(n)$, but maximum expected deviation bounds grow at rate $O(\sqrt{n})$.</li>
-                        <li><strong>Average Security Posture ($S_n/n$):</strong> According to LLN, an enterprise can reliably predict its mean vulnerability rate ($p$) across large systems despite random individual attacks.</li>
-                        <li><strong>Attacker Population ($m$):</strong> Simulating large $m$ trajectory runs maps out the full probability distribution envelope, enabling security teams to set upper percentile risk thresholds (e.g., $99^{\text{th}}$ percentile breach count).</li>
-                    </ul>
-                </div>
-
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Application Script -->
     <script>
-        // State Management
-        const state = {
-            model: 'bernoulli', // 'bernoulli' or 'rademacher'
-            n: 100,
-            m: 500,
-            p: 0.50,
-            metric: 'normalized', // 'total', 'average', 'normalized', 'standardized'
-            isDarkMode: document.documentElement.classList.contains('dark')
+        const $ = id => document.getElementById(id);
+        const COL = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
+        const fg = () => getComputedStyle(document.body).color;
+        const Phi = z => {
+            const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.3275911 * x);
+            const poly = ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
+            const e = 1 - poly * Math.exp(-x * x);
+            return 0.5 * (1 + Math.sign(z) * e);
         };
+        const pdf = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+        const f = x => (x !== 0 && (Math.abs(x) >= 1000 || Math.abs(x) < 0.01)) ? x.toExponential(2) : x.toPrecision(3);
+        const vr = a => { const mn = a.reduce((x, y) => x + y) / a.length; return a.reduce((x, y) => x + (y - mn) ** 2, 0) / a.length; };
+        const mean = a => a.reduce((x, y) => x + y) / a.length;
 
-        // Charts references
-        let trajChart = null;
-        let histChart = null;
-        let varChart = null;
-
-        // DOM Elements
-        const themeToggleBtn = document.getElementById('themeToggle');
-        const modelBernoulliBtn = document.getElementById('modelBernoulli');
-        const modelRademacherBtn = document.getElementById('modelRademacher');
-        const nSlider = document.getElementById('nSlider');
-        const nVal = document.getElementById('nVal');
-        const mSlider = document.getElementById('mSlider');
-        const mVal = document.getElementById('mVal');
-        const pSlider = document.getElementById('pSlider');
-        const pVal = document.getElementById('pVal');
-        const pControl = document.getElementById('pControl');
-        const metricSelect = document.getElementById('metricSelect');
-        const runBtn = document.getElementById('runBtn');
-
-        // Theme Toggle Logic
-        themeToggleBtn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            state.isDarkMode = document.documentElement.classList.contains('dark');
-            updateChartColors();
-        });
-
-        // UI Event Listeners
-        modelBernoulliBtn.addEventListener('click', () => {
-            state.model = 'bernoulli';
-            modelBernoulliBtn.className = 'py-2 text-xs font-medium rounded-lg transition-all bg-white dark:bg-slate-800 shadow-xs text-brand-600 dark:text-brand-400';
-            modelRademacherBtn.className = 'py-2 text-xs font-medium rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
-            pControl.style.display = 'block';
-            runSimulation();
-        });
-
-        modelRademacherBtn.addEventListener('click', () => {
-            state.model = 'rademacher';
-            modelRademacherBtn.className = 'py-2 text-xs font-medium rounded-lg transition-all bg-white dark:bg-slate-800 shadow-xs text-brand-600 dark:text-brand-400';
-            modelBernoulliBtn.className = 'py-2 text-xs font-medium rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
-            pControl.style.display = 'none';
-            runSimulation();
-        });
-
-        nSlider.addEventListener('input', (e) => {
-            state.n = parseInt(e.target.value);
-            nVal.innerText = state.n;
-            runSimulation();
-        });
-
-        mSlider.addEventListener('input', (e) => {
-            state.m = parseInt(e.target.value);
-            mVal.innerText = state.m;
-            runSimulation();
-        });
-
-        pSlider.addEventListener('input', (e) => {
-            state.p = parseFloat(e.target.value);
-            pVal.innerText = state.p.toFixed(2);
-            runSimulation();
-        });
-
-        metricSelect.addEventListener('change', (e) => {
-            state.metric = e.target.value;
-            runSimulation();
-        });
-
-        runBtn.addEventListener('click', () => {
-            runSimulation();
-        });
-
-        // Helper Random Generators
-        function getStepIncrement() {
-            if (state.model === 'bernoulli') {
-                return Math.random() < state.p ? 1 : 0;
-            } else {
-                return Math.random() < 0.5 ? 1 : -1;
-            }
-        }
-
-        function getTheoreticalMoments() {
-            if (state.model === 'bernoulli') {
-                const mu = state.p;
-                const sigma2 = state.p * (1 - state.p);
-                return { mu, sigma2, sigma: Math.sqrt(sigma2) };
-            } else {
-                return { mu: 0, sigma2: 1, sigma: 1 };
-            }
-        }
-
-        // Standard Normal CDF approximation
-        function normalCDF(x) {
-            const t = 1 / (1 + 0.2316419 * Math.abs(x));
-            const d = 0.3989423 * Math.exp(-x * x / 2);
-            let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-            if (x > 0) prob = 1 - prob;
-            return prob;
-        }
-
-        // Standard Normal PDF
-        function normalPDF(x, mean = 0, std = 1) {
-            const z = (x - mean) / std;
-            return (1 / (std * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
-        }
-
-        // Simulation Core Logic
-        function runSimulation() {
-            const n = state.n;
-            const m = state.m;
-            const { mu, sigma2, sigma } = getTheoreticalMoments();
-
-            // Store full cumulative trajectory matrices: m x (n+1)
-            // trajMatrix[m][k] = total score S_k
-            const S = [];
-            for (let i = 0; i < m; i++) {
-                const path = new Float64Array(n + 1);
-                path[0] = 0;
-                let currentSum = 0;
-                for (let k = 1; k <= n; k++) {
-                    currentSum += getStepIncrement();
-                    path[k] = currentSum;
-                }
-                S.push(path);
-            }
-
-            // Empirical calculations at step n
-            const terminalScores = new Float64Array(m);
-            const terminalScaledScores = new Float64Array(m);
-
-            for (let i = 0; i < m; i++) {
-                const totalScore = S[i][n];
-                terminalScores[i] = totalScore;
-
-                if (state.metric === 'total') {
-                    terminalScaledScores[i] = totalScore;
-                } else if (state.metric === 'average') {
-                    terminalScaledScores[i] = totalScore / n;
-                } else if (state.metric === 'normalized') {
-                    terminalScaledScores[i] = totalScore / Math.sqrt(n);
-                } else { // standardized
-                    terminalScaledScores[i] = (totalScore - n * mu) / (sigma * Math.sqrt(n));
-                }
-            }
-
-            // Terminal statistics
-            let empSum = 0;
-            for (let i = 0; i < m; i++) empSum += terminalScores[i];
-            const empMeanTotal = empSum / m;
-            const empStepMean = empMeanTotal / n;
-
-            let empVarSum = 0;
-            for (let i = 0; i < m; i++) {
-                const diff = terminalScores[i] - empMeanTotal;
-                empVarSum += diff * diff;
-            }
-            const empVarTotal = empVarSum / m;
-            const empStepVar = empVarTotal / n;
-
-            // Update KPI Dashboard
-            document.getElementById('kpiExpMean').innerText = mu.toFixed(3);
-            document.getElementById('kpiEmpStepMean').innerText = empStepMean.toFixed(3);
-            document.getElementById('kpiExpVar').innerText = sigma2.toFixed(3);
-            document.getElementById('kpiEmpStepVar').innerText = empStepVar.toFixed(3);
-            document.getElementById('kpiVarAvg').innerText = (sigma2 / n).toFixed(5);
-
-            // Compute KS Distance for Standardized Score vs Standard Normal
-            const standardizedTerminal = new Float64Array(m);
-            for (let i = 0; i < m; i++) {
-                standardizedTerminal[i] = (terminalScores[i] - n * mu) / (sigma * Math.sqrt(n));
-            }
-            standardizedTerminal.sort();
-
-            let maxKSDistance = 0;
-            for (let i = 0; i < m; i++) {
-                const empiricalCDF = (i + 1) / m;
-                const theoreticalCDF = normalCDF(standardizedTerminal[i]);
-                const dist = Math.abs(empiricalCDF - theoreticalCDF);
-                if (dist > maxKSDistance) maxKSDistance = dist;
-            }
-            document.getElementById('kpiKSError').innerText = maxKSDistance.toFixed(4);
-
-            // Update Plots
-            renderTrajectoryChart(S, n, m, mu, sigma);
-            renderHistogramChart(terminalScaledScores, n, mu, sigma);
-            renderVarianceChart(S, n, m, sigma2);
-        }
-
-        // Render Trajectories Chart
-        function renderTrajectoryChart(S, n, m, mu, sigma) {
-            const ctx = document.getElementById('trajectoryCanvas').getContext('2d');
-            const isDark = state.isDarkMode;
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-
-            // Sample max 40 trajectories for visual clarity
-            const pathsToDraw = Math.min(m, 40);
-            const datasets = [];
-
-            const stepLabels = Array.from({ length: n + 1 }, (_, i) => i);
-
-            for (let i = 0; i < pathsToDraw; i++) {
-                const pathData = new Array(n + 1);
-                for (let k = 0; k <= n; k++) {
-                    const sk = S[i][k];
-                    if (k === 0) {
-                        pathData[k] = 0;
-                        continue;
-                    }
-                    if (state.metric === 'total') {
-                        pathData[k] = sk;
-                    } else if (state.metric === 'average') {
-                        pathData[k] = sk / k;
-                    } else if (state.metric === 'normalized') {
-                        pathData[k] = sk / Math.sqrt(k);
-                    } else { // standardized
-                        pathData[k] = (sk - k * mu) / (sigma * Math.sqrt(k));
-                    }
-                }
-
-                datasets.push({
-                    data: pathData,
-                    borderColor: i === 0 ? '#0ea5e9' : (isDark ? 'rgba(148, 163, 184, 0.25)' : 'rgba(100, 116, 139, 0.2)'),
-                    borderWidth: i === 0 ? 2.5 : 1,
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.05
-                });
-            }
-
-            // Expected Mean line
-            const theoreticalMeanLine = new Array(n + 1);
-            for (let k = 0; k <= n; k++) {
-                if (k === 0) {
-                    theoreticalMeanLine[k] = state.metric === 'average' ? mu : 0;
-                    continue;
-                }
-                if (state.metric === 'total') theoreticalMeanLine[k] = k * mu;
-                else if (state.metric === 'average') theoreticalMeanLine[k] = mu;
-                else if (state.metric === 'normalized') theoreticalMeanLine[k] = (k * mu) / Math.sqrt(k);
-                else theoreticalMeanLine[k] = 0;
-            }
-
-            datasets.push({
-                label: 'Theoretical Mean',
-                data: theoreticalMeanLine,
-                borderColor: '#ef4444',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                pointRadius: 0,
-                fill: false
+        function plot(id, series, lo, hi, bins, dens, withPdf, title) {
+            const c = $(id), g = c.getContext('2d'), W = c.width, H = c.height, L = 44, R = 10, T = 26, Bm = 26, col = fg();
+            g.clearRect(0, 0, W, H);
+            if (lo === hi) { lo -= 1; hi += 1; }
+            const w = (hi - lo) / bins;
+            const ys = series.map(s => {
+                const h = Array(bins).fill(0);
+                for (const v of s.v) { let b = Math.floor((v - lo) / w); if (b === bins) b--; if (b >= 0 && b < bins) h[b]++; }
+                return h.map(x => x / s.v.length / (dens ? w : 1));
             });
-
-            if (trajChart) trajChart.destroy();
-
-            trajChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: stepLabels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 12 },
-                            title: { display: true, text: 'Steps / Systems (k)', color: textColor, font: { size: 11 } }
-                        },
-                        y: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 10 } },
-                            title: { display: true, text: getMetricLabel(), color: textColor, font: { size: 11 } }
-                        }
-                    }
-                }
+            const ymax = Math.max(...ys.flat(), withPdf ? 0.4 : 0) * 1.1 || 1;
+            const X = v => L + (v - lo) / (hi - lo) * (W - L - R), Y = y => H - Bm - y / ymax * (H - Bm - T);
+            g.strokeStyle = col; g.fillStyle = col; g.font = '12px sans-serif'; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(L, T); g.lineTo(L, H - Bm); g.lineTo(W - R, H - Bm); g.stroke();
+            g.textAlign = 'center';
+            [lo, (lo + hi) / 2, hi].forEach(v => g.fillText(f(v), X(v), H - Bm + 15));
+            g.textAlign = 'right'; g.fillText(f(ymax), L - 4, T + 8); g.fillText('0', L - 4, H - Bm);
+            g.textAlign = 'left'; g.fillText(title, L, 14);
+            ys.forEach((h, j) => {
+                g.strokeStyle = COL[j]; g.lineWidth = 2; g.beginPath();
+                h.forEach((y, b) => { const x = X(lo + (b + 0.5) * w); b ? g.lineTo(x, Y(y)) : g.moveTo(x, Y(y)); });
+                g.stroke();
+                g.fillStyle = COL[j]; g.fillText(series[j].label, W - R - 70, T + 12 + 14 * j);
             });
+            if (withPdf) {
+                g.strokeStyle = col; g.lineWidth = 1.5; g.setLineDash([5, 4]); g.beginPath();
+                for (let i = 0; i <= 100; i++) { const z = lo + (hi - lo) * i / 100; i ? g.lineTo(X(z), Y(pdf(z))) : g.moveTo(X(z), Y(pdf(z))); }
+                g.stroke(); g.setLineDash([]);
+            }
         }
 
-        // Render Distribution Histogram & Normal Overlay
-        function renderHistogramChart(data, n, mu, sigma) {
-            const ctx = document.getElementById('histogramCanvas').getContext('2d');
-            const isDark = state.isDarkMode;
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-
-            // Calculate bins
-            let minVal = Infinity, maxVal = -Infinity;
-            for (let i = 0; i < data.length; i++) {
-                if (data[i] < minVal) minVal = data[i];
-                if (data[i] > maxVal) maxVal = data[i];
-            }
-
-            const numBins = 25;
-            const range = (maxVal - minVal) || 1;
-            const binWidth = range / numBins;
-            const bins = new Array(numBins).fill(0);
-
-            for (let i = 0; i < data.length; i++) {
-                let binIdx = Math.floor((data[i] - minVal) / binWidth);
-                if (binIdx >= numBins) binIdx = numBins - 1;
-                bins[binIdx]++;
-            }
-
-            // Bin Centers & Relative Densities
-            const binCenters = [];
-            const densities = [];
-            for (let i = 0; i < numBins; i++) {
-                const center = minVal + (i + 0.5) * binWidth;
-                binCenters.push(center.toFixed(2));
-                densities.push(bins[i] / (data.length * binWidth));
-            }
-
-            // Normal Curve Parameters depending on current Metric
-            let targetMean = 0;
-            let targetStd = 1;
-
-            if (state.metric === 'total') {
-                targetMean = n * mu;
-                targetStd = sigma * Math.sqrt(n);
-            } else if (state.metric === 'average') {
-                targetMean = mu;
-                targetStd = sigma / Math.sqrt(n);
-            } else if (state.metric === 'normalized') {
-                targetMean = (Math.sqrt(n) * mu);
-                targetStd = sigma;
-            } else { // standardized
-                targetMean = 0;
-                targetStd = 1;
-            }
-
-            const gaussianOverlay = binCenters.map(xStr => {
-                const x = parseFloat(xStr);
-                return normalPDF(x, targetMean, targetStd);
+        function drawPaths(paths, N, mu, sd) {
+            const c = $('cPaths'), g = c.getContext('2d'), W = c.width, H = c.height, L = 56, R = 12, T = 12, Bm = 26, col = fg();
+            g.clearRect(0, 0, W, H);
+            let lo = mu * N - 3 * sd * Math.sqrt(N), hi = mu * N + 3 * sd * Math.sqrt(N);
+            paths.forEach(p => p.forEach(([, s]) => { lo = Math.min(lo, s); hi = Math.max(hi, s); }));
+            lo = Math.min(lo, 0);
+            const X = k => L + k / N * (W - L - R), Y = s => H - Bm - (s - lo) / (hi - lo) * (H - Bm - T);
+            g.fillStyle = 'rgba(127,127,127,0.22)'; g.beginPath();
+            const K = 80;
+            for (let i = 0; i <= K; i++) { const k = N * i / K; i ? g.lineTo(X(k), Y(mu * k + 2 * sd * Math.sqrt(k))) : g.moveTo(X(k), Y(mu * k + 2 * sd * Math.sqrt(k))); }
+            for (let i = K; i >= 0; i--) { const k = N * i / K; g.lineTo(X(k), Y(mu * k - 2 * sd * Math.sqrt(k))); }
+            g.fill();
+            paths.forEach((p, j) => {
+                g.strokeStyle = COL[j % COL.length]; g.lineWidth = 1.2; g.beginPath();
+                p.forEach(([k, s], i) => i ? g.lineTo(X(k), Y(s)) : g.moveTo(X(k), Y(s))); g.stroke();
             });
-
-            if (histChart) histChart.destroy();
-
-            histChart = new Chart(ctx, {
-                data: {
-                    labels: binCenters,
-                    datasets: [
-                        {
-                            type: 'bar',
-                            label: 'Empirical Density',
-                            data: densities,
-                            backgroundColor: isDark ? 'rgba(14, 165, 233, 0.45)' : 'rgba(14, 165, 233, 0.35)',
-                            borderColor: '#0ea5e9',
-                            borderWidth: 1,
-                            barPercentage: 0.98,
-                            categoryPercentage: 0.98
-                        },
-                        {
-                            type: 'line',
-                            label: 'Theoretical Normal PDF',
-                            data: gaussianOverlay,
-                            borderColor: '#f59e0b',
-                            borderWidth: 2.5,
-                            pointRadius: 0,
-                            fill: false,
-                            tension: 0.3
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: { color: textColor, font: { size: 10 } }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 9 }, maxTicksLimit: 10 },
-                            title: { display: true, text: `Score Value at Step n = ${n}`, color: textColor, font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 9 } },
-                            title: { display: true, text: 'Probability Density', color: textColor, font: { size: 10 } }
-                        }
-                    }
-                }
-            });
+            g.strokeStyle = col; g.fillStyle = col; g.font = '12px sans-serif'; g.setLineDash([5, 4]);
+            g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(N), Y(mu * N)); g.stroke(); g.setLineDash([]);
+            g.beginPath(); g.moveTo(L, T); g.lineTo(L, H - Bm); g.lineTo(W - R, H - Bm); g.stroke();
+            g.textAlign = 'center'; g.fillText('0', X(0), H - 8); g.fillText(N + ' systems', X(N) - 30, H - 8);
+            g.textAlign = 'right'; g.fillText(f(hi), L - 4, T + 8); g.fillText(f(lo), L - 4, H - Bm);
         }
 
-        // Render Variance Evolution Chart Across Steps 1..n
-        function renderVarianceChart(S, n, m, sigma2) {
-            const ctx = document.getElementById('varianceCanvas').getContext('2d');
-            const isDark = state.isDarkMode;
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-
-            const stepIndices = [];
-            const empVarTotal = [];
-            const empVarAvg = [];
-            const empVarNorm = [];
-
-            const theoVarTotal = [];
-            const theoVarAvg = [];
-            const theoVarNorm = [];
-
-            // Compute empirical variance at steps
-            const stepInterval = Math.max(1, Math.floor(n / 30));
-
-            for (let k = 1; k <= n; k += stepInterval) {
-                stepIndices.push(k);
-
-                let sum = 0;
-                for (let i = 0; i < m; i++) sum += S[i][k];
-                const mean = sum / m;
-
-                let varSum = 0;
-                for (let i = 0; i < m; i++) {
-                    const diff = S[i][k] - mean;
-                    varSum += diff * diff;
+        function run() {
+            const mdl = $('model').value, p = mdl === 'ber' ? +$('p').value : 0.5;
+            if (!(p > 0 && p < 1)) { alert('p must be strictly between 0 and 1.'); return; }
+            const ns = [...new Set($('ns').value.split(',').map(Number).filter(v => v >= 1 && Number.isInteger(v)))].sort((a, b) => a - b).slice(0, 6);
+            const m = Math.max(10, Math.floor(+$('m').value) || 0), eps = +$('eps').value || 0.05;
+            if (!ns.length) { alert('Enter at least one integer n ≥ 1.'); return; }
+            const N = ns[ns.length - 1];
+            if (N * m > 6e7) { alert('Too large: keep max(n) × m below 6·10⁷.'); return; }
+            const mu = mdl === 'ber' ? p : 0, s2 = mdl === 'ber' ? p * (1 - p) : 1, sd = Math.sqrt(s2);
+            const S = ns.map(() => new Float64Array(m)), paths = [], step = Math.max(1, Math.floor(N / 400));
+            for (let a = 0; a < m; a++) {
+                let s = 0, j = 0; const pa = a < 12 ? [[0, 0]] : null;
+                for (let k = 1; k <= N; k++) {
+                    s += mdl === 'ber' ? (Math.random() < p ? 1 : 0) : (Math.random() < 0.5 ? 1 : -1);
+                    if (pa && k % step === 0) pa.push([k, s]);
+                    if (k === ns[j]) { S[j][a] = s; j++; }
                 }
-                const vk = varSum / m;
-
-                empVarTotal.push(vk);
-                empVarAvg.push(vk / (k * k));
-                empVarNorm.push(vk / k);
-
-                theoVarTotal.push(k * sigma2);
-                theoVarAvg.push(sigma2 / k);
-                theoVarNorm.push(sigma2);
+                if (pa) paths.push(pa);
             }
+            drawPaths(paths, N, mu, sd);
 
-            if (varChart) varChart.destroy();
-
-            varChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: stepIndices,
-                    datasets: [
-                        {
-                            label: 'Var(Sₖ) [Linear Growth]',
-                            data: empVarTotal,
-                            borderColor: '#ef4444',
-                            borderWidth: 1.5,
-                            pointRadius: 0,
-                            hidden: state.metric !== 'total'
-                        },
-                        {
-                            label: 'Var(Sₖ/k) [Vanishing - LLN]',
-                            data: empVarAvg,
-                            borderColor: '#10b981',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            hidden: state.metric !== 'average'
-                        },
-                        {
-                            label: 'Var(Sₖ/√k) [Stabilized - CLT]',
-                            data: empVarNorm,
-                            borderColor: '#0ea5e9',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            hidden: state.metric !== 'normalized' && state.metric !== 'standardized'
-                        },
-                        {
-                            label: 'Theoretical Bound',
-                            data: state.metric === 'total' ? theoVarTotal : (state.metric === 'average' ? theoVarAvg : theoVarNorm),
-                            borderColor: isDark ? '#cbd5e1' : '#475569',
-                            borderWidth: 1.5,
-                            borderDash: [4, 4],
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: { color: textColor, font: { size: 10 } }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 9 } },
-                            title: { display: true, text: 'Step k', color: textColor, font: { size: 10 } }
-                        },
-                        y: {
-                            grid: { color: gridColor },
-                            ticks: { color: textColor, font: { size: 9 } },
-                            title: { display: true, text: 'Variance Value', color: textColor, font: { size: 10 } }
-                        }
-                    }
-                }
+            const range = arrs => { let lo = Infinity, hi = -Infinity; arrs.forEach(a => a.forEach(v => { if (v < lo) lo = v; if (v > hi) hi = v; })); return [lo, hi]; };
+            const mk = fn => ns.map((n, j) => ({ v: Array.from(S[j], x => fn(x, n)), label: 'n=' + n }));
+            const tot = mk(x => x), avg = mk((x, n) => x / n), nor = mk((x, n) => x / Math.sqrt(n));
+            const zs = mk((x, n) => (x - n * mu) / (sd * Math.sqrt(n)));
+            [['cS', tot, 'Total score Sₙ'], ['cA', avg, 'Average score Sₙ/n'], ['cN', nor, 'Normalized score Sₙ/√n']].forEach(([id, ser, t]) => {
+                const [lo, hi] = range(ser.map(s => s.v)); plot(id, ser, lo, hi, 50, false, false, t);
             });
-        }
+            plot('cZ', zs, -4, 4, 32, true, true, 'Standardized Zₙ vs N(0,1) (dashed)');
 
-        function getMetricLabel() {
-            switch (state.metric) {
-                case 'total': return 'Total Score (Sₖ)';
-                case 'average': return 'Average Score (Sₖ / k)';
-                case 'normalized': return 'Normalized Score (Sₖ / √k)';
-                case 'standardized': return 'Standard Score (Zₖ)';
-            }
+            let h = '<tr><th>n</th><th>mean(Sₙ/n)<br>sim / μ</th><th>Var(Sₙ)<br>sim / nσ²</th><th>Var(Sₙ/n)<br>sim / σ²/n</th><th>Var(Sₙ/√n)<br>sim / σ²</th><th>P(|Sₙ/n−μ|&gt;ε)<br>sim / Chebyshev</th><th>KS(Zₙ, N(0,1))</th></tr>';
+            ns.forEach((n, j) => {
+                const a = S[j], v = vr(a), tail = a.filter(x => Math.abs(x / n - mu) > eps).length / m;
+                const Z = zs[j].v.slice().sort((x, y) => x - y); let D = 0;
+                Z.forEach((z, i) => { const F = Phi(z); D = Math.max(D, Math.abs((i + 1) / m - F), Math.abs(i / m - F)); });
+                h += `<tr><td>${n}</td><td>${f(mean(a) / n)} / ${f(mu)}</td><td>${f(v)} / ${f(n * s2)}</td><td>${f(v / n / n)} / ${f(s2 / n)}</td><td>${f(v / n)} / ${f(s2)}</td><td>${tail.toFixed(3)} / ${Math.min(1, s2 / (n * eps * eps)).toFixed(3)}</td><td>${D.toFixed(3)}</td></tr>`;
+            });
+            $('tab').innerHTML = h;
+            $('tabNote').textContent = `Model: ${mdl === 'ber' ? 'Bernoulli(p=' + p + ')' : 'Rademacher'}, μ = ${mu}, σ² = ${f(s2)}, m = ${m} attackers, ε = ${eps}. The KS distance cannot go much below the sampling noise of about 1/√m = ${(1 / Math.sqrt(m)).toFixed(3)} (5% critical value ≈ ${(1.36 / Math.sqrt(m)).toFixed(3)}), and for small n the lattice nature of Sₙ adds to it.`;
         }
-
-        function updateChartColors() {
-            runSimulation();
-        }
-
-        // Initialize simulation on page load
-        window.onload = function() {
-            runSimulation();
-        };
+        run();
     </script>
 </body>
+
 </html>
