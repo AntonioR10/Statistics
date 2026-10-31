@@ -3,268 +3,222 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HMWK: Penetration process, LLN and CLT</title>
-    <link rel="stylesheet" href="../style.css">
-    <style>
-        canvas {
-            width: 100%;
-            max-width: 480px;
-            height: auto;
-            background: #0b1329;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework: Welford's Algorithm & Sampling Statistics</title>
 
-        .cmp {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 0.85rem;
-        }
+    <!-- Collegamento al file style.css esterno (modifica il percorso se necessario, es. style.css o ../style.css) -->
+    <link rel="stylesheet" href="style.css">
 
-        .cmp th,
-        .cmp td {
-            padding: 6px 8px;
-            text-align: right;
-        }
-
-        .cmp th:first-child,
-        .cmp td:first-child {
-            text-align: left;
-        }
-
-        .ctl label {
-            margin-right: 4px;
-        }
-
-        .ctl input,
-        .ctl select {
-            margin-right: 14px;
-        }
-
-        .note {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-    </style>
+    <!-- MathJax per il rendering LaTeX -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body>
 
+    <h1>Homework: Welford's Recurrence & Sampling Statistics</h1>
+
+    <!-- EXERCISE 1 -->
     <div class="card">
-        <a href="../index.html" style="text-decoration:none"><button style="padding:8px 16px;font-size:0.9rem">←
-                Home</button></a>
-        <h1>HMWK: Penetration process with n systems and m attackers</h1>
-        <p>Each attacker is one trajectory. Step i is the attempt on system i, with score X<sub>i</sub> (i.i.d.). For
-            each attacker we track the total score S<sub>n</sub>, the average S<sub>n</sub>/n and the normalized score
-            S<sub>n</sub>/√n.</p>
-        <div class="ctl">
-            <label for="model">Model:</label>
-            <select id="model" onchange="$('p').disabled=this.value!=='ber'">
-                <option value="ber">Bernoulli {0,1}</option>
-                <option value="rad">Rademacher {−1,+1}</option>
-            </select>
-            <label for="p">p:</label><input type="number" id="p" value="0.3" min="0.01" max="0.99" step="0.01"
-                style="width:70px">
-            <label for="ns">System sizes n (up to 6, comma separated):</label><input id="ns" value="10,100,1000,10000"
-                style="width:170px">
-            <label for="m">Attackers m:</label><input type="number" id="m" value="2000" min="10" style="width:80px">
-            <label for="eps">ε:</label><input type="number" id="eps" value="0.05" min="0.001" step="0.01"
-                style="width:70px">
-            <button onclick="run()">Simulate</button>
-        </div>
+        <h2>Ex. 1 – Welford’s Recurrence Formulas</h2>
+
+        <h3>1. Mathematical Derivation</h3>
+        <p>Given a sequence $x_1, x_2, \dots, x_k$:</p>
+
+        <p><strong>Mean Recurrence (Knuth's Formula):</strong></p>
+        <p>
+            $$\bar{x}_k = \frac{1}{k} \sum_{i=1}^{k} x_i = \bar{x}_{k-1} + \frac{x_k - \bar{x}_{k-1}}{k}$$
+        </p>
+
+        <p><strong>Sum of Squares ($M_{2,k}$) Recurrence:</strong></p>
+        <p>Defining $M_{2,k} = \sum_{i=1}^{k} (x_i - \bar{x}_k)^2$, we isolate the last term:</p>
+        <p>
+            $$M_{2,k} = (x_k - \bar{x}_k)^2 + \sum_{i=1}^{k-1} (x_i - \bar{x}_k)^2$$
+        </p>
+        <p>Using $(x_i - \bar{x}_k) = (x_i - \bar{x}_{k-1}) + (\bar{x}_{k-1} - \bar{x}_k)$ and expanding:</p>
+        <p>
+            $$M_{2,k} = M_{2,k-1} + (x_k - \bar{x}_{k-1})(x_k - \bar{x}_k)$$
+        </p>
+
+        <p><strong>Sample Variance:</strong></p>
+        <p>
+            $$s_k^2 = \frac{M_{2,k}}{k - 1}$$
+        </p>
+
+        <h3>2. Core Logic Implementation</h3>
+        <pre><code>// Online update loop for a new value x at iteration k (1-indexed):
+const delta = x - mean;
+mean += delta / k;
+M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
     </div>
 
+    <!-- EXERCISE 2 -->
     <div class="card">
-        <h2>1. Sample trajectories</h2>
-        <p class="note">Twelve attackers, S<sub>k</sub> against the number of systems attempted k. The shaded band is kμ
-            ± 2σ√k.</p>
-        <canvas id="cPaths" width="900" height="360" style="max-width:900px"></canvas>
-    </div>
+        <h2>Ex. 2 – Sampling Mean and Variance Simulation</h2>
+        <p>
+            Simulating $m$ hackers attempting $n$ systems. Each score $x \sim \text{Uniform}(0, 10)$
+            with theoretical mean $\mu = 5.0$ and theoretical variance $\sigma^2 = \frac{(10-0)^2}{12} \approx 8.3333$.
+        </p>
 
-    <div class="card">
-        <h2>2. Distributions at increasing n</h2>
-        <p class="note">Bars show the fraction of attackers per bin, with the same bins for every n. Each colour is one
-            n.</p>
-        <div class="cols">
-            <div style="flex:1;min-width:300px"><canvas id="cS" width="480" height="270"></canvas></div>
-            <div style="flex:1;min-width:300px"><canvas id="cA" width="480" height="270"></canvas></div>
-        </div>
-        <div class="cols">
-            <div style="flex:1;min-width:300px"><canvas id="cN" width="480" height="270"></canvas></div>
-            <div style="flex:1;min-width:300px"><canvas id="cZ" width="480" height="270"></canvas></div>
-        </div>
-    </div>
+        <div style="margin: 18px 0;">
+            <label for="mInput">Hackers (m):</label>
+            <input type="number" id="mInput" value="100" min="10" max="1000">
 
-    <div class="card">
-        <h2>3. Numbers</h2>
-        <div style="overflow-x:auto">
-            <table class="cmp" id="tab"></table>
-        </div>
-        <p class="note" id="tabNote"></p>
-    </div>
+            <label for="nInput" style="margin-left: 12px;">Systems (n):</label>
+            <input type="number" id="nInput" value="50" min="2" max="500">
 
-    <div class="card">
-        <h2>4. Discussion</h2>
+            <button onclick="runSimulation()">Run Simulation</button>
+        </div>
+
+        <div class="out" id="results">
+            Click "Run Simulation" to generate empirical statistics.
+        </div>
+
+        <canvas id="chartCanvas" width="850" height="360"></canvas>
+
+        <h3>3. Statistical Findings</h3>
         <div class="concept-grid">
             <div class="concept-card">
-                <div class="concept-header"><span class="concept-title">Law of Large Numbers</span><span
-                        class="concept-badge">Sₙ/n → μ</span></div>
-                <p class="concept-desc">Var(Sₙ/n) = σ²/n tends to 0, so the average concentrates around μ.</p>
+                <div class="concept-header">
+                    <span class="concept-title">Unbiased Estimators</span>
+                    <span class="concept-badge">E[X] = μ</span>
+                </div>
+                <p class="concept-desc">
+                    The average sampling mean converges to $\mu$, and the average sampling variance converges to
+                    $\sigma^2$ (thanks to Bessel's correction $n-1$).
+                </p>
             </div>
+
             <div class="concept-card">
-                <div class="concept-header"><span class="concept-title">Variance scaling</span><span
-                        class="concept-badge">nσ² · σ²/n · σ²</span></div>
-                <p class="concept-desc">For Sₙ, Sₙ/n and Sₙ/√n respectively: only the √n scaling keeps it constant.</p>
+                <div class="concept-header">
+                    <span class="concept-title">Inferential Utility</span>
+                    <span class="concept-badge">Estimation</span>
+                </div>
+                <p class="concept-desc">
+                    In practice, true population parameters are unknown. Unbiasedness guarantees that sample estimators
+                    reflect true population properties without systematic error.
+                </p>
             </div>
+
             <div class="concept-card">
-                <div class="concept-header"><span class="concept-title">Central Limit Theorem</span><span
-                        class="concept-badge">Zₙ ⇒ N(0,1)</span></div>
-                <p class="concept-desc">The standardized score approaches a normal law, as the KS distance shows.</p>
+                <div class="concept-header">
+                    <span class="concept-title">Effect of Sample Size (n)</span>
+                    <span class="concept-badge">Var = σ²/n</span>
+                </div>
+                <p class="concept-desc">
+                    Increasing $n$ reduces variance ($\text{Var}(\bar{X}) = \frac{\sigma^2}{n}$). Trajectories cluster
+                    much more tightly around the mean $\mu$.
+                </p>
             </div>
         </div>
-        <h3>Law of Large Numbers</h3>
-        <p>E[S<sub>n</sub>/n] = μ and Var(S<sub>n</sub>/n) = σ²/n → 0. By Chebyshev, P(|S<sub>n</sub>/n − μ| &gt; ε) ≤
-            σ²/(nε²) → 0, so S<sub>n</sub>/n converges in probability to μ (p for Bernoulli, 0 for Rademacher). The
-            table compares the simulated tail probability with this bound, which is valid but loose.</p>
-        <h3>Variance under the three normalizations</h3>
-        <p>Var(S<sub>n</sub>) = nσ² grows, Var(S<sub>n</sub>/n) = σ²/n shrinks, and only Var(S<sub>n</sub>/√n) = σ²
-            stays constant. This is why √n is the right scale for the fluctuations of S<sub>n</sub> around its mean:
-            dividing by n over-shrinks them, and not dividing at all lets them blow up.</p>
-        <h3>Central Limit Theorem</h3>
-        <p>For the Rademacher model μ = 0 and σ = 1, so S<sub>n</sub>/√n converges in distribution to N(0, 1). The last
-            plot uses the standardized score Z<sub>n</sub> = (S<sub>n</sub> − nμ)/(σ√n), which equals S<sub>n</sub>/√n
-            in the Rademacher case and also converges to N(0, 1) for Bernoulli. The Kolmogorov–Smirnov distance in the
-            table decreases with n until it reaches the sampling noise set by m. For Bernoulli, S<sub>n</sub>/√n alone
-            has mean p√n and drifts away: the CLT applies only after centring.</p>
-        <h3>Reading the model as n systems and m attackers</h3>
-        <ul>
-            <li><b>Bernoulli:</b> S<sub>n</sub> is the number of systems an attacker breaks. Its mean np grows linearly,
-                but the fraction S<sub>n</sub>/n becomes predictable as n grows. Large installations have a stable
-                compromise rate, while the absolute count fluctuates by about √(np(1−p)).</li>
-            <li><b>Rademacher:</b> each step is a gain or a setback, with no drift. An attacker wanders around 0 with
-                typical excursions of order √n, which is negligible compared with n.</li>
-            <li><b>System size n:</b> increases the absolute spread of S<sub>n</sub> (like √n) but decreases the
-                relative spread (like 1/√n).</li>
-            <li><b>Number of attackers m:</b> does not change the distribution of one attacker's score. It improves our
-                estimate of that distribution: histograms get smoother and the KS noise floor falls roughly like 1/√m.
-                The total over all attackers has mean mnp and variance mnσ².</li>
-        </ul>
-        <div class="warn">Limits of the model: real systems are correlated, attackers adapt, and p differs between
-            systems. Independence and identical distribution are what make these theorems apply.</div>
     </div>
 
     <script>
-        const $ = id => document.getElementById(id);
-        const COL = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c'];
-        const fg = () => getComputedStyle(document.body).color;
-        const Phi = z => {
-            const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.3275911 * x);
-            const poly = ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
-            const e = 1 - poly * Math.exp(-x * x);
-            return 0.5 * (1 + Math.sign(z) * e);
-        };
-        const pdf = z => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
-        const f = x => (x !== 0 && (Math.abs(x) >= 1000 || Math.abs(x) < 0.01)) ? x.toExponential(2) : x.toPrecision(3);
-        const vr = a => { const mn = a.reduce((x, y) => x + y) / a.length; return a.reduce((x, y) => x + (y - mn) ** 2, 0) / a.length; };
-        const mean = a => a.reduce((x, y) => x + y) / a.length;
+        const A = 0, B = 10;
+        const theoreticalMean = (A + B) / 2;
+        const theoreticalVar = Math.pow(B - A, 2) / 12;
 
-        function plot(id, series, lo, hi, bins, dens, withPdf, title) {
-            const c = $(id), g = c.getContext('2d'), W = c.width, H = c.height, L = 44, R = 10, T = 26, Bm = 26, col = fg();
-            g.clearRect(0, 0, W, H);
-            if (lo === hi) { lo -= 1; hi += 1; }
-            const w = (hi - lo) / bins;
-            const ys = series.map(s => {
-                const h = Array(bins).fill(0);
-                for (const v of s.v) { let b = Math.floor((v - lo) / w); if (b === bins) b--; if (b >= 0 && b < bins) h[b]++; }
-                return h.map(x => x / s.v.length / (dens ? w : 1));
-            });
-            const ymax = Math.max(...ys.flat(), withPdf ? 0.4 : 0) * 1.1 || 1;
-            const X = v => L + (v - lo) / (hi - lo) * (W - L - R), Y = y => H - Bm - y / ymax * (H - Bm - T);
-            g.strokeStyle = col; g.fillStyle = col; g.font = '12px sans-serif'; g.lineWidth = 1;
-            g.beginPath(); g.moveTo(L, T); g.lineTo(L, H - Bm); g.lineTo(W - R, H - Bm); g.stroke();
-            g.textAlign = 'center';
-            [lo, (lo + hi) / 2, hi].forEach(v => g.fillText(f(v), X(v), H - Bm + 15));
-            g.textAlign = 'right'; g.fillText(f(ymax), L - 4, T + 8); g.fillText('0', L - 4, H - Bm);
-            g.textAlign = 'left'; g.fillText(title, L, 14);
-            ys.forEach((h, j) => {
-                g.strokeStyle = COL[j]; g.lineWidth = 2; g.beginPath();
-                h.forEach((y, b) => { const x = X(lo + (b + 0.5) * w); b ? g.lineTo(x, Y(y)) : g.moveTo(x, Y(y)); });
-                g.stroke();
-                g.fillStyle = COL[j]; g.fillText(series[j].label, W - R - 70, T + 12 + 14 * j);
-            });
-            if (withPdf) {
-                g.strokeStyle = col; g.lineWidth = 1.5; g.setLineDash([5, 4]); g.beginPath();
-                for (let i = 0; i <= 100; i++) { const z = lo + (hi - lo) * i / 100; i ? g.lineTo(X(z), Y(pdf(z))) : g.moveTo(X(z), Y(pdf(z))); }
-                g.stroke(); g.setLineDash([]);
-            }
-        }
+        function runSimulation() {
+            const m = parseInt(document.getElementById('mInput').value);
+            const n = parseInt(document.getElementById('nInput').value);
 
-        function drawPaths(paths, N, mu, sd) {
-            const c = $('cPaths'), g = c.getContext('2d'), W = c.width, H = c.height, L = 56, R = 12, T = 12, Bm = 26, col = fg();
-            g.clearRect(0, 0, W, H);
-            let lo = mu * N - 3 * sd * Math.sqrt(N), hi = mu * N + 3 * sd * Math.sqrt(N);
-            paths.forEach(p => p.forEach(([, s]) => { lo = Math.min(lo, s); hi = Math.max(hi, s); }));
-            lo = Math.min(lo, 0);
-            const X = k => L + k / N * (W - L - R), Y = s => H - Bm - (s - lo) / (hi - lo) * (H - Bm - T);
-            g.fillStyle = 'rgba(127,127,127,0.22)'; g.beginPath();
-            const K = 80;
-            for (let i = 0; i <= K; i++) { const k = N * i / K; i ? g.lineTo(X(k), Y(mu * k + 2 * sd * Math.sqrt(k))) : g.moveTo(X(k), Y(mu * k + 2 * sd * Math.sqrt(k))); }
-            for (let i = K; i >= 0; i--) { const k = N * i / K; g.lineTo(X(k), Y(mu * k - 2 * sd * Math.sqrt(k))); }
-            g.fill();
-            paths.forEach((p, j) => {
-                g.strokeStyle = COL[j % COL.length]; g.lineWidth = 1.2; g.beginPath();
-                p.forEach(([k, s], i) => i ? g.lineTo(X(k), Y(s)) : g.moveTo(X(k), Y(s))); g.stroke();
-            });
-            g.strokeStyle = col; g.fillStyle = col; g.font = '12px sans-serif'; g.setLineDash([5, 4]);
-            g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(N), Y(mu * N)); g.stroke(); g.setLineDash([]);
-            g.beginPath(); g.moveTo(L, T); g.lineTo(L, H - Bm); g.lineTo(W - R, H - Bm); g.stroke();
-            g.textAlign = 'center'; g.fillText('0', X(0), H - 8); g.fillText(N + ' systems', X(N) - 30, H - 8);
-            g.textAlign = 'right'; g.fillText(f(hi), L - 4, T + 8); g.fillText(f(lo), L - 4, H - Bm);
-        }
+            let sumSamplingMeans = 0;
+            let sumSamplingVars = 0;
+            const trajectories = [];
 
-        function run() {
-            const mdl = $('model').value, p = mdl === 'ber' ? +$('p').value : 0.5;
-            if (!(p > 0 && p < 1)) { alert('p must be strictly between 0 and 1.'); return; }
-            const ns = [...new Set($('ns').value.split(',').map(Number).filter(v => v >= 1 && Number.isInteger(v)))].sort((a, b) => a - b).slice(0, 6);
-            const m = Math.max(10, Math.floor(+$('m').value) || 0), eps = +$('eps').value || 0.05;
-            if (!ns.length) { alert('Enter at least one integer n ≥ 1.'); return; }
-            const N = ns[ns.length - 1];
-            if (N * m > 6e7) { alert('Too large: keep max(n) × m below 6·10⁷.'); return; }
-            const mu = mdl === 'ber' ? p : 0, s2 = mdl === 'ber' ? p * (1 - p) : 1, sd = Math.sqrt(s2);
-            const S = ns.map(() => new Float64Array(m)), paths = [], step = Math.max(1, Math.floor(N / 400));
-            for (let a = 0; a < m; a++) {
-                let s = 0, j = 0; const pa = a < 12 ? [[0, 0]] : null;
-                for (let k = 1; k <= N; k++) {
-                    s += mdl === 'ber' ? (Math.random() < p ? 1 : 0) : (Math.random() < 0.5 ? 1 : -1);
-                    if (pa && k % step === 0) pa.push([k, s]);
-                    if (k === ns[j]) { S[j][a] = s; j++; }
+            for (let i = 0; i < m; i++) {
+                let mean = 0;
+                let M2 = 0;
+                let trajectory = [];
+
+                for (let k = 1; k <= n; k++) {
+                    const x = Math.random() * (B - A) + A;
+                    trajectory.push(x);
+
+                    // Welford's Algorithm Core Logic
+                    const delta = x - mean;
+                    mean += delta / k;
+                    M2 += delta * (x - mean);
                 }
-                if (pa) paths.push(pa);
+
+                const variance = n > 1 ? M2 / (n - 1) : 0;
+                sumSamplingMeans += mean;
+                sumSamplingVars += variance;
+
+                if (i < 15) trajectories.push(trajectory);
             }
-            drawPaths(paths, N, mu, sd);
 
-            const range = arrs => { let lo = Infinity, hi = -Infinity; arrs.forEach(a => a.forEach(v => { if (v < lo) lo = v; if (v > hi) hi = v; })); return [lo, hi]; };
-            const mk = fn => ns.map((n, j) => ({ v: Array.from(S[j], x => fn(x, n)), label: 'n=' + n }));
-            const tot = mk(x => x), avg = mk((x, n) => x / n), nor = mk((x, n) => x / Math.sqrt(n));
-            const zs = mk((x, n) => (x - n * mu) / (sd * Math.sqrt(n)));
-            [['cS', tot, 'Total score Sₙ'], ['cA', avg, 'Average score Sₙ/n'], ['cN', nor, 'Normalized score Sₙ/√n']].forEach(([id, ser, t]) => {
-                const [lo, hi] = range(ser.map(s => s.v)); plot(id, ser, lo, hi, 50, false, false, t);
-            });
-            plot('cZ', zs, -4, 4, 32, true, true, 'Standardized Zₙ vs N(0,1) (dashed)');
+            const avgSamplingMean = sumSamplingMeans / m;
+            const avgSamplingVar = sumSamplingVars / m;
 
-            let h = '<tr><th>n</th><th>mean(Sₙ/n)<br>sim / μ</th><th>Var(Sₙ)<br>sim / nσ²</th><th>Var(Sₙ/n)<br>sim / σ²/n</th><th>Var(Sₙ/√n)<br>sim / σ²</th><th>P(|Sₙ/n−μ|&gt;ε)<br>sim / Chebyshev</th><th>KS(Zₙ, N(0,1))</th></tr>';
-            ns.forEach((n, j) => {
-                const a = S[j], v = vr(a), tail = a.filter(x => Math.abs(x / n - mu) > eps).length / m;
-                const Z = zs[j].v.slice().sort((x, y) => x - y); let D = 0;
-                Z.forEach((z, i) => { const F = Phi(z); D = Math.max(D, Math.abs((i + 1) / m - F), Math.abs(i / m - F)); });
-                h += `<tr><td>${n}</td><td>${f(mean(a) / n)} / ${f(mu)}</td><td>${f(v)} / ${f(n * s2)}</td><td>${f(v / n / n)} / ${f(s2 / n)}</td><td>${f(v / n)} / ${f(s2)}</td><td>${tail.toFixed(3)} / ${Math.min(1, s2 / (n * eps * eps)).toFixed(3)}</td><td>${D.toFixed(3)}</td></tr>`;
-            });
-            $('tab').innerHTML = h;
-            $('tabNote').textContent = `Model: ${mdl === 'ber' ? 'Bernoulli(p=' + p + ')' : 'Rademacher'}, μ = ${mu}, σ² = ${f(s2)}, m = ${m} attackers, ε = ${eps}. The KS distance cannot go much below the sampling noise of about 1/√m = ${(1 / Math.sqrt(m)).toFixed(3)} (5% critical value ≈ ${(1.36 / Math.sqrt(m)).toFixed(3)}), and for small n the lattice nature of Sₙ adds to it.`;
+            document.getElementById('results').innerHTML = `
+            Results across <b>${m}</b> hackers (<b>${n}</b> systems each):<br>
+            • <b>Theoretical Mean (&mu;):</b> ${theoreticalMean.toFixed(4)} | <b>Avg. Sampling Mean:</b> ${avgSamplingMean.toFixed(4)}<br>
+            • <b>Theoretical Variance (&sigma;&sup2;):</b> ${theoreticalVar.toFixed(4)} | <b>Avg. Sampling Variance:</b> ${avgSamplingVar.toFixed(4)}
+        `;
+
+            drawTrajectories(trajectories, n);
         }
-        run();
+
+        function drawTrajectories(trajectories, n) {
+            const canvas = document.getElementById('chartCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 40;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+
+            // Grid lines
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i += 2) {
+                const y = canvas.height - padding - (i / 10) * height;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.beginPath();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+
+            // Theoretical Mean Line
+            const yMean = canvas.height - padding - (theoreticalMean / 10) * height;
+            ctx.beginPath();
+            ctx.strokeStyle = '#21e731';
+            ctx.setLineDash([6, 6]);
+            ctx.lineWidth = 2;
+            ctx.moveTo(padding, yMean);
+            ctx.lineTo(canvas.width - padding, yMean);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Sample Trajectories
+            trajectories.forEach((traj, idx) => {
+                ctx.beginPath();
+                ctx.strokeStyle = `hsla(${(idx * 30) % 360}, 75%, 60%, 0.75)`;
+                ctx.lineWidth = 1.5;
+
+                traj.forEach((val, step) => {
+                    const x = padding + (step / (n - 1)) * width;
+                    const y = canvas.height - padding - (val / 10) * height;
+                    if (step === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+        }
+
+        window.onload = runSimulation;
     </script>
+
 </body>
 
 </html>
