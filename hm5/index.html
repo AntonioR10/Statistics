@@ -20,7 +20,7 @@
         <h1>Homework: Welford's Recurrence & Sampling Statistics</h1>
 
         <!-- EXERCISE 1 -->
-        <section>
+        <div class="card">
             <h2>Ex. 1 – Welford’s Recurrence Formulas</h2>
 
             <h3>1. Mathematical Derivation</h3>
@@ -51,10 +51,10 @@
 const delta = x - mean;
 mean += delta / k;
 M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
-        </section>
+        </div>
 
         <!-- EXERCISE 2 -->
-        <section>
+        <div class="card">
             <h2>Ex. 2 – Sampling Mean and Variance Simulation</h2>
             <p>
                 Simulating $m$ hackers attempting $n$ systems. Scores are drawn from $\text{Uniform}(0, 10)$,
@@ -73,30 +73,48 @@ M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
                 <button class="btn-primary" onclick="runSimulation()">Run Simulation</button>
             </div>
 
-            <div class="stats-card" id="results">
+            <div class="out" id="results">
                 Click "Run Simulation" to generate sample trajectories.
             </div>
 
             <canvas id="chartCanvas" width="800" height="350"></canvas>
 
             <h3>3. Statistical Conclusions</h3>
-            <ul>
-                <li>
-                    <strong>Unbiased Estimators:</strong> The average sampling mean approaches $\mu$, and the average
-                    sampling variance approaches $\sigma^2$ (due to Bessel's correction $n-1$).
-                </li>
-                <li>
-                    <strong>Inferential Relevance:</strong> Since true population parameters $\mu$ and $\sigma^2$ are
-                    typically unknown, unbiased estimators guarantee that sample calculations reliably estimate
-                    population traits without systematic bias.
-                </li>
-                <li>
-                    <strong>Impact of Sample Size ($n$):</strong> Increasing $n$ reduces variance according to
-                    $\text{Var}(\bar{X}) = \frac{\sigma^2}{n}$, leading to tighter convergence of trajectory means
-                    around the expected value $\mu$.
-                </li>
-            </ul>
-        </section>
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Unbiased Estimators</span>
+                        <span class="concept-badge">E[X] = μ</span>
+                    </div>
+                    <p class="concept-desc">
+                        The average sampling mean approaches $\mu$, and the average sampling variance approaches
+                        $\sigma^2$ (due to Bessel's correction $n-1$).
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Inferential Relevance</span>
+                        <span class="concept-badge">Estimation</span>
+                    </div>
+                    <p class="concept-desc">
+                        Since true population parameters $\mu$ and $\sigma^2$ are typically unknown, unbiased estimators
+                        guarantee that sample calculations reliably estimate population traits without systematic bias.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Impact of Sample Size ($n$)</span>
+                        <span class="concept-badge">Var = σ²/n</span>
+                    </div>
+                    <p class="concept-desc">
+                        Increasing $n$ reduces variance according to $\text{Var}(\bar{X}) = \frac{\sigma^2}{n}$, leading
+                        to tighter convergence of trajectory means around the expected value $\mu$.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -138,10 +156,10 @@ M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
             const avgSamplingVar = sumSamplingVars / m;
 
             document.getElementById('results').innerHTML = `
-            <strong>Results across ${m} hackers (${n} systems):</strong><br>
-            • <strong>Theoretical Mean (&mu;):</strong> ${theoreticalMean.toFixed(4)} | <strong>Avg. Sampling Mean:</strong> ${avgSamplingMean.toFixed(4)}<br>
-            • <strong>Theoretical Variance (&sigma;&sup2;):</strong> ${theoreticalVar.toFixed(4)} | <strong>Avg. Sampling Variance:</strong> ${avgSamplingVar.toFixed(4)}
-        `;
+                Results across <b>${m}</b> hackers (<b>${n}</b> systems):<br>
+                • <b>Theoretical Mean (&mu;):</b> ${theoreticalMean.toFixed(4)} | <b>Avg. Sampling Mean:</b> ${avgSamplingMean.toFixed(4)}<br>
+                • <b>Theoretical Variance (&sigma;&sup2;):</b> ${theoreticalVar.toFixed(4)} | <b>Avg. Sampling Variance:</b> ${avgSamplingVar.toFixed(4)}
+            `;
 
             drawTrajectories(trajectories, n);
         }
@@ -155,10 +173,21 @@ M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
             const width = canvas.width - 2 * padding;
             const height = canvas.height - 2 * padding;
 
+            // Grid lines
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i += 2) {
+                const y = canvas.height - padding - (i / 10) * height;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+            }
+
             // Axes
             ctx.beginPath();
-            ctx.strokeStyle = '#94a3b8';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
             ctx.moveTo(padding, padding);
             ctx.lineTo(padding, canvas.height - padding);
             ctx.lineTo(canvas.width - padding, canvas.height - padding);
@@ -167,8 +196,8 @@ M2 += delta * (x - mean); // Sample Variance = M2 / (k - 1)</code></pre>
             // Theoretical Mean Line
             const yMean = canvas.height - padding - (theoreticalMean / 10) * height;
             ctx.beginPath();
-            ctx.strokeStyle = '#ef4444';
-            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = '#21e731';
+            ctx.setLineDash([6, 6]);
             ctx.lineWidth = 2;
             ctx.moveTo(padding, yMean);
             ctx.lineTo(canvas.width - padding, yMean);
