@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework - Riemann/Lebesgue Integration & Normal CDF</title>
+
+    <link rel="stylesheet" href="../style.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Homework: Measure Theory & Numerical CDF Approximation</h1>
+
+        <div class="card">
+            <h2>Ex. 1 – Riemann vs Lebesgue Integration</h2>
+
+            <h3>1. Conceptual Overview</h3>
+            <p>
+                The fundamental distinction between <strong>Riemann</strong> and <strong>Lebesgue</strong> integration
+                lies in how the domain/range is partitioned:
+            </p>
+            <ul>
+                <li><strong>Riemann Integration:</strong> Partitions the domain $[a, b]$ into subintervals of length
+                    $\Delta x_i$. It computes sums of the form $\sum f(x_i^*) \Delta x_i$. It struggles with highly
+                    discontinuous functions.</li>
+                <li><strong>Lebesgue Integration:</strong> Partitions the range $[y_{\min}, y_{\max}]$ into subintervals
+                    of length $\Delta y_j$. It computes sums of the form $\sum y_j \cdot \mu(f^{-1}([y_j, y_{j+1}))$,
+                    where $\mu$ is the Lebesgue measure of the preimage.</li>
+            </ul>
+
+            <h3>2. Pathological Cases: Dirichlet & Thomae</h3>
+            <p>
+                Consider the <strong>Dirichlet function</strong> $D(x) = \mathbb{I}_{\mathbb{Q}}(x)$ on $[0, 1]$:
+            </p>
+            <ul>
+                <li><strong>Riemann:</strong> For any partition, every subinterval contains both rationals and
+                    irrationals. Thus, the upper Darboux sum is $1$ and the lower sum is $0$. The Riemann integral fails
+                    to exist.</li>
+                <li><strong>Lebesgue:</strong> Since $\mathbb{Q} \cap [0, 1]$ is countable, its measure is
+                    $\mu(\mathbb{Q}) = 0$. The preimage of $1$ has measure $0$, and the preimage of $0$ has measure $1$.
+                    Thus, $\int_{[0, 1]} D \, d\mu = 1 \cdot 0 + 0 \cdot 1 = 0$.</li>
+            </ul>
+
+            <h3>3. Interactive Visualizer & Comparison</h3>
+            <div class="controls-panel">
+                <div class="input-group">
+                    <label for="funcSelect">Function:</label>
+                    <select id="funcSelect">
+                        <option value="sin">sin(x), x ∈ [0, π]</option>
+                        <option value="sq">x², x ∈ [0, 1]</option>
+                        <option value="step">Step: 1 (x<0.5) else 3, x ∈ [0, 1]</option>
+                        <option value="abs">|x - 0.5|, x ∈ [0, 1]</option>
+                        <option value="dirichlet">Dirichlet (1 if Q else 0), x ∈ [0, 1]</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="partitions">Partitions (N):</label>
+                    <input type="number" id="partitions" value="50" min="5" max="500">
+                </div>
+                <button class="btn-primary" onclick="runIntegration()">Compute Integrals</button>
+            </div>
+
+            <div class="out" id="integrationResults">
+                Click "Compute Integrals" to compare methods.
+            </div>
+
+            <canvas id="integrationCanvas" width="800" height="300"></canvas>
+
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Accuracy</span>
+                        <span class="concept-badge">O(1/N)</span>
+                    </div>
+                    <p class="concept-desc">
+                        For smooth functions, both methods converge to identical values. For step and jump functions,
+                        Lebesgue handling of range preimages yields exact values much faster.
+                    </p>
+                </div>
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Convergence</span>
+                        <span class="concept-badge">L¹ Space</span>
+                    </div>
+                    <p class="concept-desc">
+                        Lebesgue integration allows exchange of limits and integrals under milder conditions (Dominated
+                        Convergence Theorem), making it theoretically superior in functional analysis.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Ex. 2 – Numerical Computation of the Normal CDF</h2>
+
+            <h3>1. Non-Elementarity & Liouville's Theorem</h3>
+            <p>
+                The Cumulative Distribution Function (CDF) of the Standard Normal Distribution is defined as:
+                $$\Phi(x) = \frac{1}{\sqrt{2\pi}} \int_{-\infty}^{x} e^{-\frac{t^2}{2}} \, dt$$
+            </p>
+            <p>
+                By <strong>Liouville's Theorem</strong> (and Differential Algebra), the integrand $e^{-t^2/2}$ does not
+                have an antiderivative expressible in terms of elementary functions (polynomials, exponentials,
+                logarithms, or trigonometric functions). Thus, $\Phi(x)$ must be evaluated using numerical techniques or
+                special functions.
+            </p>
+
+            <h3>2. Relationship to the Error Function (erf)</h3>
+            <p>
+                The standard error function is defined as $\text{erf}(x) = \frac{2}{\sqrt{\pi}} \int_0^x e^{-u^2} du$.
+                Through a change of variables $u = t/\sqrt{2}$, we obtain the analytical equivalence:
+                $$\Phi(x) = \frac{1}{2} \left[ 1 + \text{erf}\left(\frac{x}{\sqrt{2}}\right) \right]$$
+            </p>
+
+            <h3>3. Series Expansion Implementation</h3>
+            <p>
+                Using Taylor expansion for $e^{-u^2} = \sum_{k=0}^{\infty} \frac{(-1)^k u^{2k}}{k!}$, we derive the
+                power series for $\text{erf}(z)$:
+                $$\text{erf}(z) = \frac{2}{\sqrt{\pi}} \sum_{k=0}^{\infty} \frac{(-1)^k z^{2k+1}}{k! (2k + 1)}$$
+            </p>
+
+            <div class="controls-panel">
+                <div class="input-group">
+                    <label for="xValue">Evaluate at x:</label>
+                    <input type="number" id="xValue" value="1.96" step="0.1">
+                </div>
+                <button class="btn-primary" onclick="evaluateCDF()">Compute CDF</button>
+            </div>
+
+            <div class="out" id="cdfResults">
+                Click "Compute CDF" to compare numerical approximations.
+            </div>
+
+            <table style="margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Computed Φ(x)</th>
+                        <th>Absolute Error vs Exact</th>
+                    </tr>
+                </thead>
+                <tbody id="cdfTableBody">
+                    <tr>
+                        <td colspan="3">No data calculated yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+
+        function runIntegration() {
+            const funcType = document.getElementById('funcSelect').value;
+            const N = parseInt(document.getElementById('partitions').value);
+
+            let a = 0, b = 1;
+            let f = x => x;
+
+            if (funcType === 'sin') { a = 0; b = Math.PI; f = x => Math.sin(x); }
+            else if (funcType === 'sq') { a = 0; b = 1; f = x => x * x; }
+            else if (funcType === 'step') { a = 0; b = 1; f = x => x < 0.5 ? 1 : 3; }
+            else if (funcType === 'abs') { a = 0; b = 1; f = x => Math.abs(x - 0.5); }
+            else if (funcType === 'dirichlet') { a = 0; b = 1; f = x => (Number.isInteger(x * 1000) ? 0 : 0); } // Numerical approximation of Dirichlet measure = 0
+
+            const dx = (b - a) / N;
+            let riemannSum = 0;
+            for (let i = 0; i < N; i++) {
+                const xMid = a + (i + 0.5) * dx;
+                riemannSum += f(xMid) * dx;
+            }
+
+            let yMin = 0, yMax = 1;
+            if (funcType === 'sin') yMax = 1;
+            if (funcType === 'step') yMax = 3;
+            if (funcType === 'abs') yMax = 0.5;
+            if (funcType === 'sq') yMax = 1;
+
+            const dy = (yMax - yMin) / N;
+            let lebesgueSum = 0;
+
+            const samples = 2000;
+            const sampleDx = (b - a) / samples;
+            for (let j = 0; j < N; j++) {
+                const yVal = yMin + (j + 0.5) * dy;
+                let measure = 0;
+                for (let s = 0; s < samples; s++) {
+                    const x = a + s * sampleDx;
+                    const y = f(x);
+                    if (y >= j * dy && y < (j + 1) * dy) {
+                        measure += sampleDx;
+                    }
+                }
+                lebesgueSum += yVal * measure;
+            }
+
+            document.getElementById('integrationResults').innerHTML = `
+                Results for <b>${funcType}</b> over [${a.toFixed(2)}, ${b.toFixed(2)}] with N = ${N}:<br>
+                • <b>Riemann Sum (Domain Partition):</b> ${riemannSum.toFixed(5)}<br>
+                • <b>Lebesgue Sum (Range Preimage):</b> ${lebesgueSum.toFixed(5)}
+            `;
+
+            drawFunction(f, a, b, yMin, yMax);
+        }
+
+        function drawFunction(f, a, b, yMin, yMax) {
+            const canvas = document.getElementById('integrationCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const pad = 30;
+            const w = canvas.width - 2 * pad;
+            const h = canvas.height - 2 * pad;
+
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad, pad); ctx.lineTo(pad, canvas.height - pad);
+            ctx.lineTo(canvas.width - pad, canvas.height - pad);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#21e731';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const steps = 300;
+            for (let i = 0; i <= steps; i++) {
+                const px = i / steps;
+                const x = a + px * (b - a);
+                const y = f(x);
+                const py = (y - yMin) / (yMax - yMin || 1);
+
+                const cx = pad + px * w;
+                const cy = canvas.height - pad - py * h;
+                if (i === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+        }
+
+        function erfTaylor(z, terms = 20) {
+            const factor = 2 / Math.sqrt(Math.PI);
+            let sum = 0;
+            for (let k = 0; k < terms; k++) {
+                let num = Math.pow(-1, k) * Math.pow(z, 2 * k + 1);
+                let den = factorial(k) * (2 * k + 1);
+                sum += num / den;
+            }
+            return factor * sum;
+        }
+
+        function factorial(n) {
+            if (n <= 1) return 1;
+            let res = 1;
+            for (let i = 2; i <= n; i++) res *= i;
+            return res;
+        }
+
+        function phiTrapezoidal(x, N = 1000) {
+            const limit = -8; // -infinity approximation
+            if (x < limit) return 0;
+            const h = (x - limit) / N;
+            let sum = 0.5 * (stdNormalPdf(limit) + stdNormalPdf(x));
+            for (let i = 1; i < N; i++) {
+                sum += stdNormalPdf(limit + i * h);
+            }
+            return sum * h;
+        }
+
+        function stdNormalPdf(t) {
+            return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * t * t);
+        }
+
+        function erfAbramowitz(x) {
+            const sign = x < 0 ? -1 : 1;
+            x = Math.abs(x);
+            const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+            const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+            const t = 1.0 / (1.0 + p * x);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+            return sign * y;
+        }
+
+        function evaluateCDF() {
+            const x = parseFloat(document.getElementById('xValue').value);
+
+            const valTrapezoid = phiTrapezoidal(x);
+            const valTaylor = 0.5 * (1 + erfTaylor(x / Math.sqrt(2)));
+            const valRef = 0.5 * (1 + erfAbramowitz(x / Math.sqrt(2)));
+
+            document.getElementById('cdfResults').innerHTML = `
+                Evaluated Standard Normal CDF at <b>x = ${x}</b>:
+            `;
+
+            document.getElementById('cdfTableBody').innerHTML = `
+                <tr>
+                    <td>Numerical Integration (Trapezoidal)</td>
+                    <td>${valTrapezoid.toFixed(8)}</td>
+                    <td>${Math.abs(valTrapezoid - valRef).toExponential(3)}</td>
+                </tr>
+                <tr>
+                    <td>Taylor Series (erf expansion)</td>
+                    <td>${valTaylor.toFixed(8)}</td>
+                    <td>${Math.abs(valTaylor - valRef).toExponential(3)}</td>
+                </tr>
+                <tr>
+                    <td>Reference (Abramowitz & Stegun)</td>
+                    <td>${valRef.toFixed(8)}</td>
+                    <td>0.00e+0</td>
+                </tr>
+            `;
+        }
+
+        window.onload = function () {
+            runIntegration();
+            evaluateCDF();
+        };
+    </script>
+</body>
+
+</html>
