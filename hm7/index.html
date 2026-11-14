@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework - Statistical Independence & Chi-Square Test</title>
+
+    <!-- Minimal fallback styles: overridden by ../style.css when it is present -->
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 6px 10px;
+            text-align: center;
+        }
+
+        .out,
+        .warn {
+            border-left: 4px solid #888;
+            padding: 10px 14px;
+            margin: 12px 0;
+        }
+
+        .caution {
+            border-left: 4px solid #c77700;
+            padding: 10px 14px;
+            margin: 12px 0;
+        }
+    </style>
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- MathJax rendering (polyfill.io removed: MathJax 3 does not need it) -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Homework: Statistical Independence & Contingency Analysis</h1>
+
+        <!-- SECTION 1 -->
+        <div class="card">
+            <h2>1. Theoretical Concepts: Probability vs. Statistics</h2>
+            <p>Understanding independence requires bridging theoretical probability models with empirical statistical
+                observations:</p>
+
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Probability Theory</span>
+                        <span class="concept-badge">P(A ∩ B) = P(A)P(B)</span>
+                    </div>
+                    <p class="concept-desc">
+                        Two random variables $X$ and $Y$ are independent if their joint distribution equals the product
+                        of their marginals: $P(X=x, Y=y) = P(X=x)P(Y=y)$, or equivalently $P(Y=y \mid X=x) = P(Y=y)$.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Statistical Independence</span>
+                        <span class="concept-badge">Eᵢⱼ = (Rᵢ · Cⱼ) / N</span>
+                    </div>
+                    <p class="concept-desc">
+                        In empirical datasets, exact equality rarely holds due to sampling noise. We test the null
+                        hypothesis $H_0$ (independence) by comparing observed frequencies $O_{ij}$ against expected
+                        frequencies $E_{ij}$ under independence.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Pearson's Chi-Square</span>
+                        <span class="concept-badge">χ² = Σ (O - E)² / E</span>
+                    </div>
+                    <p class="concept-desc">
+                        Measures the total normalized discrepancy between observed and expected counts. Under $H_0$,
+                        $\chi^2$ asymptotically follows a $\chi^2_\nu$ distribution with $\nu = (r - 1)(c - 1)$ degrees
+                        of freedom. The approximation is reliable when (rule of thumb) all $E_{ij} \ge 5$.
+                    </p>
+                </div>
+
+                <div class="concept-card">
+                    <div class="concept-header">
+                        <span class="concept-title">Effect Size: Cramér's V</span>
+                        <span class="concept-badge">V = √(χ² / (N·min(r−1, c−1)))</span>
+                    </div>
+                    <p class="concept-desc">
+                        The p-value tells us whether an association is detectable; Cramér's V ($0 \le V \le 1$) tells us
+                        how strong it is. With a very large $N$, even a negligible association can be "significant".
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2 -->
+        <div class="card">
+            <h2>2. Programmatic Contingency Table & Chi-Square Test</h2>
+            <p>
+                Select a bivariate dataset scenario $(X, Y)$ to generate raw observations, build the contingency table,
+                and evaluate marginal, conditional, and expected distributions.
+            </p>
+
+            <div style="margin: 18px 0;">
+                <label for="datasetMode">Scenario:</label>
+                <select id="datasetMode">
+                    <option value="dependent">Dependent: Attack Vector (X) vs. Breach Success (Y)</option>
+                    <option value="independent">Independent: Server OS (X) vs. Login Hour (Y)</option>
+                </select>
+
+                <label for="sampleSize" style="margin-left: 12px;">Sample Size (N):</label>
+                <input type="number" id="sampleSize" value="300" min="50" max="5000">
+
+                <button onclick="runAnalysis()">Generate & Analyze</button>
+            </div>
+
+            <div class="out" id="summaryOut">Click "Generate & Analyze" to compute the contingency tables.</div>
+            <div class="caution" id="validityOut" style="display:none;"></div>
+
+            <h3>Observed Frequencies ($O_{ij}$) & Marginal Totals</h3>
+            <div style="overflow-x: auto;">
+                <table id="observedTable"></table>
+            </div>
+
+            <h3>Conditional Frequencies $P(Y \mid X)$ (Row Percentages)</h3>
+            <div style="overflow-x: auto;">
+                <table id="conditionalTable"></table>
+            </div>
+
+            <h3>Expected Frequencies ($E_{ij}$) Under Independence</h3>
+            <div style="overflow-x: auto;">
+                <table id="expectedTable"></table>
+            </div>
+        </div>
+
+        <!-- SECTION 3 -->
+        <div class="card">
+            <h2>3. Interpretation & Association vs. Causality</h2>
+
+            <div id="interpretationBox" class="warn">Run the analysis above to view the dynamic statistical
+                interpretation.</div>
+
+            <h3>Statistical Association vs. Causality</h3>
+            <ul>
+                <li>
+                    <strong>Statistical Association (Dependence):</strong> Rejecting $H_0$ ($p &lt; 0.05$) shows that
+                    knowing $X$ provides information about the distribution of $Y$: the variables co-vary beyond random
+                    chance.
+                </li>
+                <li>
+                    <strong>Association $\neq$ Causation:</strong> A significant $\chi^2$ alone cannot establish a
+                    causal direction ($X \rightarrow Y$ vs. $Y \rightarrow X$).
+                </li>
+                <li>
+                    <strong>Confounding Variables:</strong> Two variables may be strongly dependent solely because both
+                    are driven by a hidden third factor (a <em>confounder</em> $Z$). Establishing causality requires
+                    randomized controlled experiments or causal inference frameworks (e.g., Pearl's do-calculus), not
+                    observational contingency tables alone.
+                </li>
+                <li>
+                    <strong>Type I error:</strong> With $\alpha = 0.05$, about 5% of datasets generated under true
+                    independence will still reject $H_0$ by chance. Re-run the independent scenario several times to
+                    observe this.
+                </li>
+                <li>
+                    <strong>Failing to reject $H_0$</strong> is not a proof of independence: it only means the data are
+                    consistent with it.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 1. Generate synthetic bivariate dataset [(x1, y1), (x2, y2), ...]
+        function generateBivariateData(mode, n) {
+            const xCategories = mode === 'dependent' ? ['Phishing', 'SQLi', 'BruteForce'] : ['Linux', 'Windows', 'BSD'];
+            const yCategories = mode === 'dependent' ? ['Blocked', 'Compromised'] : ['Morning', 'Afternoon', 'Night'];
+            const dataset = [];
+
+            for (let i = 0; i < n; i++) {
+                const rX = Math.random();
+                const x = rX < 0.45 ? xCategories[0] : rX < 0.80 ? xCategories[1] : xCategories[2];
+
+                const rY = Math.random();
+                let y;
+                if (mode === 'dependent') {
+                    // Strong dependence: P(Blocked | X) differs across attack vectors
+                    const pBlocked = x === 'Phishing' ? 0.40 : x === 'SQLi' ? 0.65 : 0.90;
+                    y = rY < pBlocked ? 'Blocked' : 'Compromised';
+                } else {
+                    // Independence: Y distribution identical regardless of X
+                    y = rY < 1 / 3 ? yCategories[0] : rY < 2 / 3 ? yCategories[1] : yCategories[2];
+                }
+                dataset.push({ x, y });
+            }
+            return { dataset, xCategories, yCategories };
+        }
+
+        // 2. Main analysis pipeline
+        function runAnalysis() {
+            const mode = document.getElementById('datasetMode').value;
+            let n = parseInt(document.getElementById('sampleSize').value, 10);
+            if (!Number.isFinite(n)) n = 300;
+            n = Math.min(5000, Math.max(50, n));
+            document.getElementById('sampleSize').value = n;
+
+            const { dataset, xCategories, yCategories } = generateBivariateData(mode, n);
+            const r = xCategories.length, c = yCategories.length;
+            const O = Array.from({ length: r }, () => Array(c).fill(0));
+
+            dataset.forEach(row => {
+                const i = xCategories.indexOf(row.x);
+                const j = yCategories.indexOf(row.y);
+                if (i !== -1 && j !== -1) O[i][j]++;
+            });
+
+            const rowTotals = O.map(row => row.reduce((a, b) => a + b, 0));
+            const colTotals = Array.from({ length: c }, (_, j) => O.reduce((s, row) => s + row[j], 0));
+            const totalN = rowTotals.reduce((a, b) => a + b, 0);
+
+            const E = Array.from({ length: r }, () => Array(c).fill(0));
+            let chiSquare = 0, lowCells = 0;
+            for (let i = 0; i < r; i++) {
+                for (let j = 0; j < c; j++) {
+                    E[i][j] = (rowTotals[i] * colTotals[j]) / totalN;
+                    if (E[i][j] < 5) lowCells++;
+                    if (E[i][j] > 0) chiSquare += Math.pow(O[i][j] - E[i][j], 2) / E[i][j];
+                }
+            }
+
+            const dof = (r - 1) * (c - 1);
+            const pValue = chiSquarePValue(chiSquare, dof);
+            const cramerV = Math.sqrt(chiSquare / (totalN * Math.min(r - 1, c - 1)));
+            const pText = pValue < 0.0001 ? '< 0.0001' : pValue.toFixed(4);
+
+            renderObservedTable(O, xCategories, yCategories, rowTotals, colTotals, totalN);
+            renderConditionalTable(O, xCategories, yCategories, rowTotals, colTotals, totalN);
+            renderExpectedTable(E, xCategories, yCategories, rowTotals, colTotals, totalN);
+
+            const isDependent = pValue < 0.05;
+            document.getElementById('summaryOut').innerHTML = `
+                <b>Dataset Summary (N = ${totalN}):</b><br>
+                • <b>Degrees of Freedom (&nu;):</b> ${dof}<br>
+                • <b>Chi-Square Statistic (&chi;&sup2;):</b> ${chiSquare.toFixed(4)}<br>
+                • <b>p-value:</b> ${pText}
+                (${isDependent ? '<b>Reject H₀ — Statistically Dependent</b>' : '<b>Fail to Reject H₀ — Consistent with Independence</b>'})<br>
+                • <b>Cramér's V:</b> ${cramerV.toFixed(3)} (${effectLabel(cramerV)} association)
+            `;
+
+            // Validity check: expected counts >= 5
+            const validity = document.getElementById('validityOut');
+            if (lowCells > 0) {
+                validity.style.display = 'block';
+                validity.innerHTML = `<b>Warning:</b> ${lowCells} of ${r * c} cells have $E_{ij} &lt; 5$. The $\\chi^2$ approximation may be unreliable; consider a larger $N$ or merging categories.`;
+            } else {
+                validity.style.display = 'none';
+            }
+
+            // Scenario-specific interpretation
+            const interpBox = document.getElementById('interpretationBox');
+            if (isDependent) {
+                interpBox.className = 'out';
+                interpBox.innerHTML = `
+                    <b>Conclusion (Dependent Variables):</b> Because <i>p</i> = ${pText} &lt; 0.05,
+                    the conditional distributions $P(Y \\mid X)$ differ significantly across categories of $X$;
+                    the discrepancy (&chi;&sup2; = ${chiSquare.toFixed(2)}, V = ${cramerV.toFixed(2)}) is too large to be explained by sampling variation alone.
+                    <br><br><b>Causality caveat:</b> ${mode === 'dependent'
+                        ? 'the attack vector is associated with breach success, but this does not prove that it <em>causes</em> the outcome: a confounder such as patch level or security configuration could influence both which attacks are attempted and whether they succeed.'
+                        : 'this result arises by chance (Type I error): the data were generated independently, which shows why a significant test is not proof of a real relationship.'}
+                `;
+            } else {
+                interpBox.className = 'warn';
+                interpBox.innerHTML = `
+                    <b>Conclusion (Independent Variables):</b> Because <i>p</i> = ${pText} &ge; 0.05,
+                    the conditional distributions $P(Y \\mid X)$ closely mirror the marginal $P(Y)$.
+                    Deviations between $O_{ij}$ and $E_{ij}$ (&chi;&sup2; = ${chiSquare.toFixed(2)}, V = ${cramerV.toFixed(2)}) are attributable to sampling noise.
+                    <br><br><b>Caveat:</b> ${mode === 'independent'
+                        ? 'here independence holds by construction (server OS and login hour are generated separately). About 5% of runs will still reject $H_0$ by chance.'
+                        : 'the data were generated with a real dependence, so this is a Type II error (low power, likely a small N). Not rejecting $H_0$ never proves independence.'}
+                `;
+            }
+
+            typesetMath();
+        }
+
+        function effectLabel(v) {
+            return v < 0.1 ? 'negligible' : v < 0.3 ? 'small' : v < 0.5 ? 'moderate' : 'strong';
+        }
+
+        // Safe MathJax re-typesetting (MathJax is loaded async)
+        function typesetMath() {
+            if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+                MathJax.typesetPromise().catch(err => console.warn('MathJax error:', err));
+            }
+        }
+
+        function renderObservedTable(O, xCats, yCats, rowTotals, colTotals, totalN) {
+            let html = `<thead><tr><th>X \\ Y</th>${yCats.map(y => `<th>${y}</th>`).join('')}<th>Marginal P(X)</th></tr></thead><tbody>`;
+            O.forEach((row, i) => {
+                const margX = ((rowTotals[i] / totalN) * 100).toFixed(1);
+                html += `<tr><td><b>${xCats[i]}</b></td>`;
+                row.forEach(val => html += `<td>${val}</td>`);
+                html += `<td><b>${rowTotals[i]}</b> (${margX}%)</td></tr>`;
+            });
+            html += `<tr><td><b>Marginal P(Y)</b></td>`;
+            colTotals.forEach(cTot => {
+                html += `<td><b>${cTot}</b> (${((cTot / totalN) * 100).toFixed(1)}%)</td>`;
+            });
+            html += `<td><b>${totalN} (100%)</b></td></tr></tbody>`;
+            document.getElementById('observedTable').innerHTML = html;
+        }
+
+        function renderConditionalTable(O, xCats, yCats, rowTotals, colTotals, totalN) {
+            let html = `<thead><tr><th>P(Y | X)</th>${yCats.map(y => `<th>P(${y} | X)</th>`).join('')}<th>Row Sum</th></tr></thead><tbody>`;
+            O.forEach((row, i) => {
+                html += `<tr><td><b>X = ${xCats[i]}</b></td>`;
+                row.forEach(val => {
+                    const cond = rowTotals[i] > 0 ? ((val / rowTotals[i]) * 100).toFixed(1) : '0.0';
+                    html += `<td>${cond}%</td>`;
+                });
+                html += `<td>100.0%</td></tr>`;
+            });
+            html += `<tr><td><b>Marginal P(Y)</b></td>`;
+            colTotals.forEach(cTot => html += `<td><b>${((cTot / totalN) * 100).toFixed(1)}%</b></td>`);
+            html += `<td>100.0%</td></tr></tbody>`;
+            document.getElementById('conditionalTable').innerHTML = html;
+        }
+
+        function renderExpectedTable(E, xCats, yCats, rowTotals, colTotals, totalN) {
+            let html = `<thead><tr><th>Expected Eᵢⱼ</th>${yCats.map(y => `<th>${y}</th>`).join('')}<th>Row Total</th></tr></thead><tbody>`;
+            E.forEach((row, i) => {
+                html += `<tr><td><b>${xCats[i]}</b></td>`;
+                row.forEach(val => html += `<td${val < 5 ? ' style="color:#c77700;font-weight:bold"' : ''}>${val.toFixed(2)}</td>`);
+                html += `<td>${rowTotals[i]}</td></tr>`;
+            });
+            html += `<tr><td><b>Col Total</b></td>`;
+            colTotals.forEach(cTot => html += `<td>${cTot}</td>`);
+            html += `<td><b>${totalN}</b></td></tr></tbody>`;
+            document.getElementById('expectedTable').innerHTML = html;
+        }
+
+        // --- p-value: upper regularized gamma Q(dof/2, chi2/2) ---
+        function chiSquarePValue(chi2, dof) {
+            if (chi2 <= 0 || dof <= 0) return 1.0;
+            const p = upperIncompleteGammaQ(dof / 2, chi2 / 2);
+            return Math.min(1, Math.max(0, p));
+        }
+
+        function upperIncompleteGammaQ(a, x) {
+            if (x < a + 1) return 1.0 - lowerIncompleteGammaP(a, x);
+            // Continued fraction (Lentz's method)
+            let b = x + 1 - a, c = 1 / 1e-30, d = 1 / b, h = d;
+            for (let i = 1; i <= 200; i++) {
+                const an = -i * (i - a);
+                b += 2;
+                d = an * d + b;
+                if (Math.abs(d) < 1e-30) d = 1e-30;
+                c = b + an / c;
+                if (Math.abs(c) < 1e-30) c = 1e-30;
+                d = 1 / d;
+                const del = d * c;
+                h *= del;
+                if (Math.abs(del - 1.0) < 1e-10) break;
+            }
+            return Math.exp(-x + a * Math.log(x) - logGamma(a)) * h;
+        }
+
+        function lowerIncompleteGammaP(a, x) {
+            let sum = 1 / a, del = sum, ap = a;
+            for (let n = 1; n <= 200; n++) {
+                ap += 1;
+                del *= x / ap;
+                sum += del;
+                if (Math.abs(del) < Math.abs(sum) * 1e-10) break;
+            }
+            return sum * Math.exp(-x + a * Math.log(x) - logGamma(a));
+        }
+
+        function logGamma(z) {
+            const cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+                -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+            let y = z;
+            let tmp = z + 5.5;
+            tmp -= (z + 0.5) * Math.log(tmp);
+            let ser = 1.000000000190015;
+            for (let j = 0; j < 6; j++) ser += cof[j] / ++y;
+            return -tmp + Math.log(2.5066282746310005 * ser / z);
+        }
+
+        // Run once the page (and async MathJax) are ready
+        window.addEventListener('load', runAnalysis);
+    </script>
+</body>
+
+</html>
